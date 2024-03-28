@@ -1,0 +1,17 @@
+.vs/
+.vscode/
+build/
+release/
+cmake-build-debug/
+clion_build/
+.idea/
+
+models/*
+!models/.gitkeep
+
+data/*
+!data/.gitkeep
+
+
+
+CmakePresets.json
