@@ -32,6 +32,7 @@ void chw_to_hwc(cv::InputArray src, cv::OutputArray dst);
 // resize image with padding 
 void resize_padding(cv::Mat& img, float& det_scale, cv::Size img_size);
 
+void box_nms(std::vector<cv::Rect> &input_boxes, std::vector<float> confidences, std::vector<std::vector<float>> landmarks, std::vector<int> labels, float NMS_THRESH);
 
 static inline void softmax_(const float* x, float* y, int length)
 {
@@ -55,4 +56,4 @@ static inline float sigmoid_x(float x)
     return static_cast<float>(1.f / (1.f + exp(-x)));
 }
 
-#endif
+#endif // IMAGE_PROCESSING_H

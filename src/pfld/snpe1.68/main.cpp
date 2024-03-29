@@ -5,30 +5,35 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "Yolov8Onnx.h"
+#include "RetinafaceSnpe.h"
+#include "PfldSnpe.h"
 #include "Datatype.h"
+
+
+int platform;
 
 int main(int argc, char* argv[]) {
     // 检查是否有足够的命令行参数
     if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " <platdorm> " << " <modelpath> " << " <inputpath> "<< std::endl;
+        std::cerr << "Usage: " << argv[0] << " int <platdorm> " << " string <modelpath> " << " string <inputpath> "<< std::endl;
+        std::cerr << "platdorm: " << " 0->CPU " << " 1->GPU " << " 2->DSP " << " 3->AIP " <<std::endl;
         return 1;
     }
 
     std::string modelpath;
     modelpath = argv[2];
-    std::cout << "modelpath: " << modelpath << std::endl;
+    std::cout << "retinaface modelpath: " << modelpath << std::endl;
+
+    std::string modelpath2;
+    modelpath2 = argv[3];
+    std::cout << "pfld modelpath: " << modelpath2 << std::endl;
 
     std::string img_path;
-    img_path = argv[3];
+    img_path = argv[4];
     std::cout << "inputpath: " << img_path << std::endl;
-
-    auto *YoloV8_engine = new Yolov8Onnx(modelpath.c_str(), cv::Size(640, 640));
-    if (YoloV8_engine->init() != 0 ) {
-        std::cerr << "Initialization failed." << std::endl;
-        return 0;
-    }
-    std::vector<DET_OUTPUT> results;
+    auto *Retina_engine = new RetinafaceSnpe(modelpath, cv::Size(640, 640), platform);
+    auto *Pfld_engine = new PfldSnpe(modelpath2, cv::Size(112, 112), platform);
+    std::vector<FACE_RESULT> results;
 
     size_t dotPos = img_path.find_last_of('.');
     if (dotPos == std::string::npos) {
@@ -42,17 +47,19 @@ int main(int argc, char* argv[]) {
         std::cout << "Processing image: " << img_path << std::endl;
         cv::Mat cvmat = cv::imread(img_path);
 
+        // To test the inference speed
         int nums = 1;
         while(nums > 0) {
             cv::Mat result_mat = cvmat.clone();
             auto start = static_cast<double>(cv::getTickCount());
-            YoloV8_engine->getInference(result_mat, results);
+            Retina_engine->getInference(result_mat, results);
+            Pfld_engine->getInference(result_mat, results);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
-            std::cout << "--------------------------All Time cost : " << time_cost << "ms" << std::endl;
+            std::cout << "------------------------All Time cost : " << time_cost << "ms" << std::endl;
             nums --;
         }
-        YoloV8_engine->drawResult(cvmat, results);
+        Pfld_engine->drawResult(cvmat, results);
 
         // cv::imwrite("../images/result_mat.jpg", result_mat);
 
@@ -104,12 +111,12 @@ int main(int argc, char* argv[]) {
             //     break;
             // }
             auto start = static_cast<double>(cv::getTickCount());
-            YoloV8_engine->getInference(frame, results);
+            Retina_engine->getInference(frame, results);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "---------Inference Time cost : " << time_cost << "ms" << std::endl;
 
-            YoloV8_engine->drawResult(result_mat, results);
+            // YoloV8_engine->drawResult(result_mat, results);
 
             cv::imshow("YOLOv8: ", result_mat);
             if(cv::waitKey(30) == 27) // Wait for 'esc' key press to exit
@@ -125,9 +132,9 @@ int main(int argc, char* argv[]) {
     } else {std::cout << "Unsupported file format: " << img_path << std::endl;}
 
 
-    delete YoloV8_engine;
-    YoloV8_engine = nullptr;
+    delete Retina_engine;
+    Retina_engine = nullptr;
     // cv::destroyAllWindows();
-
     return 0;
 }
+

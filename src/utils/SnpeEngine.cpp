@@ -1,8 +1,8 @@
 #include "SnpeEngine.h"
 #include <fstream>
 #include "SNPE/SNPEFactory.hpp"
-#include "DlSystem/DlEnums.hpp"
-
+//#include "DlSystem/DlEnums.hpp"
+#include "ImageProcessing.h"
 void SnpeEngine::checkRuntime(){
     static zdl::DlSystem::Version_t Version = zdl::SNPE::SNPEFactory::getLibraryVersion();
     std::cout << "SNPE Version: " << Version.asString().c_str() << std::endl; // 打印版本号
@@ -33,7 +33,7 @@ void SnpeEngine::checkRuntime(){
 
 void SnpeEngine::setruntime(const int platform) {// 设置推理硬件顺序
     _runtime_list.clear();
-    this->platform = static_cast<Platform>(platform);
+    this->_platform = static_cast<Platform>(platform);
     switch (platform) {
         case 3:
             _runtime_list.add(zdl::DlSystem::Runtime_t::AIP_FIXED_TF);
@@ -47,6 +47,28 @@ void SnpeEngine::setruntime(const int platform) {// 设置推理硬件顺序
             _runtime_list.add(zdl::DlSystem::Runtime_t::CPU);
             break;
     }
+}
+
+void SnpeEngine::preProcessing(cv::Mat &img, float & det_scale, bool padding, bool normalize, bool mean, bool bgr2rgb) const{
+    det_scale=1.0;
+    if(img.size() != _model_input_size) {
+        if(padding){resize_padding(img, det_scale, this->_model_input_size);}
+        else{cv::resize(img, img, cv::Size(_model_input_hight, _model_input_width));}
+
+    }
+    // cv::imshow("YOLOv8: ", img);
+    // cv::waitKey();
+
+    if(mean){
+        cv::Scalar meanValues(103.0, 117.0, 123.0);
+        img -= meanValues;
+    }
+    if(normalize){ img.convertTo(img, CV_32F, 1.0 / 255);}
+    else{img.convertTo(img, CV_32F, 1.0);}
+
+    // BGR to RGB
+    if(bgr2rgb){cv::cvtColor(img, img, cv::COLOR_BGR2RGB);}
+
 }
 
 void SnpeEngine::setOutName(const std::vector<std::string>& out_names) {
@@ -94,8 +116,8 @@ int SnpeEngine::init(const std::string &model_path, int platdorm) {
 void SnpeEngine::build_tensor(const cv::Mat &mat) {
     zdl::DlSystem::Dimension dims[4];
     dims[0] = 1;
-    dims[1] = model_input_width;
-    dims[2] = model_input_hight;
+    dims[1] = _model_input_width;
+    dims[2] = _model_input_hight;
     dims[3] = 3;
     zdl::DlSystem::TensorShape tensorShape(dims, 4);
     _input_tensor = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(tensorShape);
@@ -139,6 +161,11 @@ int SnpeEngine::inference()
     }
     return 0;
 }
+
+
+//int SnpeEngine::inference(const cv::Mat &cv_mat, std::map<std::string, float *> &out_tensor) {
+//    return 0;
+//}
 
 #if 0
 int SnpeEngine::inference(const cv::Mat &cv_mat, std::vector<Yolov8OutPut>& outPut) {
@@ -412,10 +439,3 @@ void SnpeEngine::Preprocessing(cv::Mat &img, float &detScale) const{
 
 }
 #endif
-
-
-
-
-// template<typename T>
-// void SnpeEngine::Postprocessing(std::vector<T> & _results, float det_scale) const {
-//     }

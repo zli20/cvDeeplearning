@@ -1,8 +1,3 @@
-/*!
-    @Description : https://github.com/shaoshengsong/
-    @Author      : shaoshengsong
-    @Date        : 2022-09-21 05:49:06
-*/
 #ifndef TRACK_DATA_TYPE
 #define TRACK_DATA_TYPE
 

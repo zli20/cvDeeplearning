@@ -20,8 +20,8 @@ link_directories(
         ${SNPE_LIB_PATH}
 )
 #add_subdirectory(midas)
-#add_subdirectory(pfld)
-#add_subdirectory(retinaface)
+add_subdirectory(pfld)
+add_subdirectory(retinaface)
 add_subdirectory(yolov8)
 add_subdirectory(yolov8face)
 add_subdirectory(yolov8pose)

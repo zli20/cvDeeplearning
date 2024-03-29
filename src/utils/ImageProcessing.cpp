@@ -124,4 +124,52 @@ void resize_padding(cv::Mat &img, float& det_scale, cv::Size img_size) {
  }
 
 
+void box_nms(std::vector<cv::Rect> &input_boxes, std::vector<float> confidences, std::vector<std::vector<float>> landmarks, std::vector<int> labels, float NMS_THRESH)
+{
+    std::vector<float>vArea(input_boxes.size());
+    for (int i = 0; i < int(input_boxes.size()); ++i)
+    {
+        vArea[i] = (input_boxes.at(i).width + 1) * (input_boxes.at(i).height + 1);
+    }
+    for (int i = 0; i < int(input_boxes.size()); ++i)
+    {
+        for (int j = i + 1; j < int(input_boxes.size());)
+        {
+            float xx1 = std::max(input_boxes[i].x, input_boxes[j].x);
+            float yy1 = std::max(input_boxes[i].y, input_boxes[j].y);
+//            float xx2 = std::min(input_boxes[i].x2, input_boxes[j].x2);
+//            float yy2 = std::min(input_boxes[i].y2, input_boxes[j].y2);
+            float xx2 = std::min(input_boxes[i].x + input_boxes[i].width, input_boxes[j].x + input_boxes[j].width);
+            float yy2 = std::min(input_boxes[i].y + input_boxes[i].height, input_boxes[j].y + input_boxes[j].height);
+            float w = std::max(float(0), xx2 - xx1 + 1);
+            float h = std::max(float(0), yy2 - yy1 + 1);
+            float inter = w * h;
+            float ovr = inter / (vArea[i] + vArea[j] - inter);
+            if (ovr >= NMS_THRESH)
+            {
+                if (confidences[i] > confidences[j])
+                {
+                    input_boxes.erase(input_boxes.begin() + j);
+                    confidences.erase(confidences.begin() + j);
+                    landmarks.erase(landmarks.begin() + j);
+                    labels.erase(labels.begin() + j);
+                    vArea.erase(vArea.begin() + j);
+                }
+                else
+                {
+                    input_boxes.erase(input_boxes.begin() + i);
+                    confidences.erase(confidences.begin() + i);
+                    landmarks.erase(landmarks.begin() + i);
+                    labels.erase(labels.begin() + i);
+                    vArea.erase(vArea.begin() + i);
+                }
+            }
+            else
+            {
+                j++;
+            }
+        }
+    }
+}
+
 

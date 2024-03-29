@@ -25,7 +25,7 @@ class SnpeEngine
 {
 public:
     explicit SnpeEngine(const cv::Size image_size):
-        model_input_size(image_size), model_input_width(image_size.width), model_input_hight(image_size.height)
+        _model_input_size(image_size), _model_input_width(image_size.width), _model_input_hight(image_size.height)
     {
         checkRuntime();
     };
@@ -35,11 +35,12 @@ public:
         std:: cout << "deinit success..." << std::endl;
     };
 
-    int init(const std::string &model_path, int platdorm=CPU);
+    int init(const std::string &model_path, int platform=CPU);
 
-    int inference(const cv::Mat& cv_mat, std::map<std::string, float*> &out_tensor);
+//    int inference(const cv::Mat& cv_mat, std::map<std::string, float*> &out_tensor);
 
-    // virtual void postProcessing(std::vector<std::any> & _results, float det_scale) = 0;
+    void preProcessing(cv::Mat &img, float & det_scale, bool padding=false, bool normalize=true, bool mean=true, bool bgr2rgb=false) const;
+// virtual void postProcessing(std::vector<std::any> & _results, float det_scale) = 0;
     // virtual void Preprocessing(cv::Mat &img, float & det_scale);
 
     void setOutName(const std::vector<std::string>& out_names);
@@ -48,10 +49,10 @@ public:
 
     int inference();
 
-    cv::Size model_input_size;
-    int model_input_width;
-    int model_input_hight;
-    Platform platform = CPU;
+    cv::Size _model_input_size;
+    int _model_input_width;
+    int _model_input_hight;
+    Platform _platform = CPU;
 
     // snpe model
     std::unique_ptr<zdl::SNPE::SNPE> _engine;
@@ -68,7 +69,7 @@ public:
     // snpe builder config
     zdl::DlSystem::RuntimeList _runtime_list;
 
-    void setruntime(int platdorm);
+    void setruntime(int platform);
 
     static  void checkRuntime();
 

@@ -32,7 +32,6 @@ int Yolov8FaceSnpe::getInference(const cv::Mat &img, std::vector<FACE_RESULT>& r
 	results.clear();
 	postProcessing(results, det_scale);
 	return 0;
-
 }
 
 void Yolov8FaceSnpe::postProcessing(std::vector<FACE_RESULT> & _results, float det_scale) {
@@ -61,6 +60,8 @@ void Yolov8FaceSnpe::postProcessing(std::vector<FACE_RESULT> & _results, float d
 
 				if (box_prob > this->target_conf_th) {
 					float pred_ltrb[4];
+//                    std::unique_ptr<float[]> dfl_value(new float[reg_max]);
+//                    std::unique_ptr<float[]> dfl_softmax(new float[reg_max]);
 					auto* dfl_value = new float[reg_max];
 					auto* dfl_softmax = new float[reg_max];
 					for (int k = 0; k < 4; k++) {
@@ -98,6 +99,9 @@ void Yolov8FaceSnpe::postProcessing(std::vector<FACE_RESULT> & _results, float d
 						kpts.push_back(kpt_conf);
 					}
 					landmarks.push_back(kpts);
+
+                    delete[] dfl_value;
+                    delete[] dfl_softmax;
 				}
 				pdata += this->out_nums;
 			}
@@ -119,6 +123,12 @@ void Yolov8FaceSnpe::postProcessing(std::vector<FACE_RESULT> & _results, float d
 		result.landmark = landmarks[idx];
 		_results.push_back(result);
 	}
+
+    for (auto& kpts : landmarks) {
+        kpts.clear();
+    }
+    landmarks.clear();
+
 }
 
 void Yolov8FaceSnpe::drawResult(cv::Mat& img, const std::vector<FACE_RESULT>& results) const {

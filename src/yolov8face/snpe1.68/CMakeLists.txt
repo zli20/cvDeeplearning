@@ -16,10 +16,9 @@ link_directories(
 set(YOLOV8_FACE_SOURCE_SNPE
         Yolov8FaceSnpe.cpp
         Yolov8FaceSnpe.h
-        main.cpp
 )
 
-add_executable(yolov8_face_snpe ${YOLOV8_FACE_SOURCE_SNPE} ${UTILS_SRC_FILES})
+add_executable(yolov8_face_snpe ${YOLOV8_FACE_SOURCE_SNPE} ${UTILS_SRC_FILES}  main.cpp)
 
 target_link_libraries(yolov8_face_snpe ${SNPE_LIBS})
 target_link_libraries(yolov8_face_snpe ${ONNXRUNTIME_LIBS})
