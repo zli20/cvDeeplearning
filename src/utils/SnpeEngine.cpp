@@ -130,7 +130,9 @@ int SnpeEngine::inference()
         if (tensor != nullptr) {
             // 将张量指针存储到map中
             auto *pdata = reinterpret_cast<float *>(&(*tensor->begin()));
+            zdl::DlSystem::TensorShape shape = tensor->getShape();
             _out_data_ptr[tensorName] = pdata;
+            _output_shapes[tensorName] = shape;
         } else {
             std::cerr << "Tensor not found: " << tensorName << std::endl;
         }
@@ -417,3 +419,7 @@ void SnpeEngine::cvSigmoid(cv::Mat& mat) {
     mat += 1.0;
     cv::divide(1.0, mat, mat);
 }
+
+// template<typename T>
+// void SnpeEngine::Postprocessing(std::vector<T> & _results, float det_scale) const {
+//     }

@@ -32,4 +32,27 @@ void chw_to_hwc(cv::InputArray src, cv::OutputArray dst);
 // resize image with padding 
 void resize_padding(cv::Mat& img, float& det_scale, cv::Size img_size);
 
+
+static inline void softmax_(const float* x, float* y, int length)
+{
+    // Calculate exponential values and sum
+    float sum_exp = 0.0f;
+    for (int i = 0; i < length; i++)
+    {
+        y[i] = expf(x[i]);
+        sum_exp += y[i];
+    }
+
+    // Normalize using sum
+    for (int i = 0; i < length; i++)
+    {
+        y[i] /= sum_exp;
+    }
+}
+
+static inline float sigmoid_x(float x)
+{
+    return static_cast<float>(1.f / (1.f + exp(-x)));
+}
+
 #endif

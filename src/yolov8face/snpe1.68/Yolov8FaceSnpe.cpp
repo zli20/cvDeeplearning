@@ -2,8 +2,21 @@
 #include "ImageProcessing.h"
 #include <cmath>
 
-using namespace std;
-using namespace cv;
+void Yolov8FaceSnpe::preProcessing(cv::Mat &img, float & det_scale) const{
+	det_scale=1.0;
+	if(img.size() != model_input_size) {
+		// resize_padding(img, det_scale, this->img_input_size);
+		cv::resize(img, img, cv::Size(model_input_hight, model_input_width));
+	}
+	// cv::imshow("YOLOv8: ", img);
+	// cv::waitKey();
+	img.convertTo(img, CV_32F, 1.0/255);
+	cv::Scalar meanValues(103.0 / 255, 117.0 / 255, 123.0 / 255);
+	img -= meanValues;
+	// BGR to RGB
+	// cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
+
+}
 
 int Yolov8FaceSnpe::getInference(const cv::Mat &img, std::vector<FACE_RESULT>& results) {
 	this->img_input_size = img.size();
@@ -22,97 +35,124 @@ int Yolov8FaceSnpe::getInference(const cv::Mat &img, std::vector<FACE_RESULT>& r
 
 }
 
+void Yolov8FaceSnpe::postProcessing(std::vector<FACE_RESULT> & _results, float det_scale) {
+	float higth_scale = 640.0 / this->img_input_size.height;
+	float width_scale = 640.0 / this->img_input_size.width;
 
-static inline void softmax_(const float* x, float* y, int length)
-{
-	// Calculate exponential values and sum
-	float sum_exp = 0.0f;
-	for (int i = 0; i < length; i++)
-	{
-		y[i] = expf(x[i]);
-		sum_exp += y[i];
-	}
+	std::vector<float> confidences;
+	std::vector<cv::Rect> boxes;
+	std::vector<int> labels;
+	std::vector<std::vector<float>> landmarks;
+	for(const auto& it : this->_out_data_ptr){
+		std::cout << it.first <<" "<< it.second << std::endl;
+		auto *pdata = it.second;
+		auto shape= this->_output_shapes[it.first];
+		std:: cout << shape[0] << " " << shape[3]<< std::endl;
+		const int feat_h = shape[1];
+		const int feat_w = shape[2];
+		// const int area = feat_h * feat_w;
+		const int stride = (int)ceil((float)this->model_input_hight / feat_h);
 
-	// Normalize using sum
-	for (int i = 0; i < length; i++)
-	{
-		y[i] /= sum_exp;
-	}
-}
-
-static inline float sigmoid_x(float x)
-{
-	return static_cast<float>(1.f / (1.f + exp(-x)));
-}
-
-void Yolov8FaceSnpe::generate_proposal(cv::Mat out, std::vector<cv::Rect>& boxes, std::vector<float>& confidences, std::vector< std::vector<Point>>& landmarks, int imgh,int imgw, float ratioh, float ratiow, int padh, int padw)
-{
-	const int feat_h = out.size[2];
-	const int feat_w = out.size[3];
-	cout << out.size[1] << "," << out.size[2] << "," << out.size[3] << endl;
-	const int stride = (int)ceil((float)inpHeight / feat_h);
-	const int area = feat_h * feat_w;
-	float* ptr = (float*)out.data;
-	float* ptr_cls = ptr + area * reg_max * 4;
-	float* ptr_kp = ptr + area * (reg_max * 4 + num_class);
-
-	for (int i = 0; i < feat_h; i++)
-	{
-		for (int j = 0; j < feat_w; j++)
-		{
-			const int index = i * feat_w + j;
-			int cls_id = -1;
-			float max_conf = -10000;
-			for (int k = 0; k < num_class; k++)
+		for (int i = 0; i < feat_h; i++) {
+			for (int j = 0; j < feat_w; j++)
 			{
-				float conf = ptr_cls[k*area + index];
-				if (conf > max_conf)
-				{
-					max_conf = conf;
-					cls_id = k;
+				float conf = pdata[64];
+				float box_prob = sigmoid_x(conf);
+
+				if (box_prob > this->target_conf_th) {
+					float pred_ltrb[4];
+					auto* dfl_value = new float[reg_max];
+					auto* dfl_softmax = new float[reg_max];
+					for (int k = 0; k < 4; k++) {
+						for (int n = 0; n < reg_max; n++)
+						{
+							dfl_value[n] = pdata[n+k*reg_max];
+						}
+						softmax_(dfl_value, dfl_softmax, reg_max);
+						float dis = 0.f;
+						for (int n = 0; n < reg_max; n++)
+						{
+							dis += n * dfl_softmax[n];
+						}
+						pred_ltrb[k] = dis * stride;
+					}
+					float cx = (j + 0.5f)*stride;
+					float cy = (i + 0.5f)*stride;
+					float xmin = std::max((cx - pred_ltrb[0]) / width_scale, 0.f) ;
+					float ymin = std::max((cy - pred_ltrb[1]) / higth_scale, 0.f) ;
+					float xmax = std::min((cx + pred_ltrb[2]) / width_scale, float(img_input_size.width - 1));
+					float ymax = std::min((cy + pred_ltrb[3]) / higth_scale, float(img_input_size.height - 1));
+					cv::Rect box = cv::Rect(xmin, ymin, (xmax - xmin), (ymax - ymin));
+					boxes.push_back(box);
+					confidences.push_back(box_prob);
+					labels.push_back(0);
+
+					std::vector<float>kpts;
+					for (int k = 0; k < this->num_point; k++)
+					{
+						float kpt_x = (pdata[k * 3 + 64 + 1] * 2 + j)*stride / width_scale;
+						float kpt_y = (pdata[k * 3 + 64 + 1 + 1] * 2 + i)*stride / higth_scale;
+						float kpt_conf = sigmoid_x(pdata[k * 3 + + 64 + 1 + 2]);
+						kpts.push_back(kpt_x);
+						kpts.push_back(kpt_y);
+						kpts.push_back(kpt_conf);
+					}
+					landmarks.push_back(kpts);
 				}
+				pdata += this->out_nums;
 			}
-			float box_prob = sigmoid_x(max_conf);
-			if (box_prob > this->target_conf_th)
-			{
-				float pred_ltrb[4];
-				float* dfl_value = new float[reg_max];
-				float* dfl_softmax = new float[reg_max];
-				for (int k = 0; k < 4; k++)
-				{
-					for (int n = 0; n < reg_max; n++)
-					{
-						dfl_value[n] = ptr[(k*reg_max + n)*area + index];
-					}
-					softmax_(dfl_value, dfl_softmax, reg_max);
+		}
+	}
 
-					float dis = 0.f;
-					for (int n = 0; n < reg_max; n++)
-					{
-						dis += n * dfl_softmax[n];
-					}
+	auto start = std::chrono::system_clock::now();
+	std::vector<int> nms_result;
+	cv::dnn::NMSBoxes(boxes, confidences, target_conf_th, nms_th, nms_result);
+	auto end = std::chrono::system_clock::now();
+	auto detect_time =std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();//ms
+	std::cout<<"nms time: "<<detect_time<<std::endl;
 
-					pred_ltrb[k] = dis * stride;
-				}
-				float cx = (j + 0.5f)*stride;
-				float cy = (i + 0.5f)*stride;
-				float xmin = max((cx - pred_ltrb[0] - padw)*ratiow, 0.f);  ///还原回到原图
-				float ymin = max((cy - pred_ltrb[1] - padh)*ratioh, 0.f);
-				float xmax = min((cx + pred_ltrb[2] - padw)*ratiow, float(imgw - 1));
-				float ymax = min((cy + pred_ltrb[3] - padh)*ratioh, float(imgh - 1));
-				Rect box = Rect(int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin));
-				boxes.push_back(box);
-				confidences.push_back(box_prob);
+	for (auto idx : nms_result) {
+		FACE_RESULT result;
+		result.confidence = confidences[idx];
+		result.box = boxes[idx];
+		result.label = labels[idx];
+		result.landmark = landmarks[idx];
+		_results.push_back(result);
+	}
+}
 
-				vector<Point> kpts(5);
-				for (int k = 0; k < 5; k++)
-				{
-					float x = ((ptr_kp[(k * 3)*area + index] * 2 + j)*stride - padw)*ratiow;  ///还原回到原图
-					float y = ((ptr_kp[(k * 3 + 1)*area + index] * 2 + i)*stride - padh)*ratioh;
-					///float pt_conf = sigmoid_x(ptr_kp[(k * 3 + 2)*area + index]);
-					kpts[k] = Point(int(x), int(y));
-				}
-				landmarks.push_back(kpts);
+void Yolov8FaceSnpe::drawResult(cv::Mat& img, const std::vector<FACE_RESULT>& results) const {
+	if (results.empty()) {
+		return ;
+	}
+	for (auto& result : results) {
+		int  left, top, width, height;
+		left = result.box.x;
+		top = result.box.y;
+		width = result.box.width;
+		height = result.box.height;
+
+		cv::Rect boxxs;
+		boxxs.x = left;
+		boxxs.y = top;
+		boxxs.width = width;
+		boxxs.height = height;
+
+		cv::rectangle(img, boxxs, cv::Scalar(0, 0, 255), 1, 8);
+		std::string label = std::to_string(result.confidence);
+		int baseLine;
+		cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+		top = std::max(top, labelSize.height);
+		putText(img, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+		for (int k = 0; k < this->num_point; k++)
+		{
+			int kpt_x = std::round(result.landmark[k * 3]);
+			int kpt_y = std::round(result.landmark[k * 3 + 1]);
+			float kpt_conf = result.landmark[k * 3 + 2];
+			if (kpt_conf > 0.2f) {
+				cv::Scalar kps_color = cv::Scalar(0, 255, 255);
+				cv::circle(img, { kpt_x, kpt_y }, 3, kps_color, -1);
 			}
 		}
 	}

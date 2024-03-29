@@ -93,7 +93,8 @@ int platform;
 int main(int argc, char* argv[]) {
    // 检查是否有足够的命令行参数
     if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " <platdorm> " << " <modelpath> " << " <inputpath> "<< std::endl;
+        std::cerr << "Usage: " << argv[0] << " int <platdorm> " << " string <modelpath> " << " string <inputpath> "<< std::endl;
+        std::cerr << "platdorm: " << " 0->CPU " << " 1->GPU " << " 2->DSP " << " 3->AIP " <<std::endl;
         return 1;
     }
 

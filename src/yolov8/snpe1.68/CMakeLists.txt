@@ -5,12 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OPENCV_INCLUDE_PATH}")
 
 include_directories(
-        ${OPENCV_INCLUDE_PATH}
-        ${ONNXRUNTIME_INCLUDE_PATH}
-        ${SNPE_INCLUDE_PATH}
-        ${EIGEN_INCLUDE_PATH}
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${UTILS_INCLUDE_PATH}
 )
 
 link_directories(
@@ -19,14 +14,14 @@ link_directories(
         ${SNPE_LIB_PATH}
 )
 
-set(SOURCE_FILES
+set(YOLOV8_DET_SOURCE_SNPE
         Yolov8DetSnpe.cpp
         Yolov8DetSnpe.h
         main.cpp
 )
 
-add_executable(yolov8_snpe ${SOURCE_FILES} ${UTILS_SRC_FILES})
+add_executable(yolov8_det_snpe ${YOLOV8_DET_SOURCE_SNPE} ${UTILS_SRC_FILES})
 
-target_link_libraries(yolov8_snpe ${SNPE_LIBS})
-target_link_libraries(yolov8_snpe ${ONNXRUNTIME_LIBS})
-target_link_libraries(yolov8_snpe ${OPENCV_LIBS})
+target_link_libraries(yolov8_det_snpe ${SNPE_LIBS})
+target_link_libraries(yolov8_det_snpe ${ONNXRUNTIME_LIBS})
+target_link_libraries(yolov8_det_snpe ${OPENCV_LIBS})

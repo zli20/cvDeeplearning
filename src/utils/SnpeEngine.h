@@ -1,8 +1,9 @@
-#ifndef YOLOV8_POSE_SNPE_SNPEENGINE_H
-#define YOLOV8_POSE_SNPE_SNPEENGINE_H
+#ifndef SNPE_SNPEENGINE_H
+#define SNPE_SNPEENGINE_H
 
 #include <vector>
 #include <iostream>
+#include <any>
 
 #include "DlContainer/IDlContainer.hpp"
 #include "DlSystem/DlError.hpp"
@@ -18,6 +19,7 @@ class PostProcessing;
 class PreProcessing;
 
 enum Platform {CPU=0, GPU, DSP, AIP  };
+
 
 class SnpeEngine
 {
@@ -37,8 +39,8 @@ public:
 
     int inference(const cv::Mat& cv_mat, std::map<std::string, float*> &out_tensor);
 
-    // virtual void Postprocessing(const cv::Mat &img, const PostProcessing& post_processing) const = 0;
-    // virtual void Preprocessing(const cv::Mat &img, const PreProcessing& pre_processing) const = 0;
+    // virtual void postProcessing(std::vector<std::any> & _results, float det_scale) = 0;
+    // virtual void Preprocessing(cv::Mat &img, float & det_scale);
 
     void setOutName(const std::vector<std::string>& out_names);
 
@@ -46,9 +48,6 @@ public:
 
     int inference();
 
-    static inline float sigmoid(float x) {
-        return 1 / (1 + exp(-x));
-    }
     static void cvSigmoid(cv::Mat& mat);
 
     cv::Size model_input_size;
@@ -66,6 +65,7 @@ public:
     std::unique_ptr<zdl::DlSystem::ITensor> _input_tensor;
     zdl::DlSystem::TensorMap _output_tensor_map;
     std::map<std::string, float*> _out_data_ptr;
+    std::map<std::string, zdl::DlSystem::TensorShape > _output_shapes;
 
     // snpe builder config
     zdl::DlSystem::RuntimeList _runtime_list;
@@ -84,8 +84,6 @@ private:
 
 
 
-
-
 };
 
-#endif //YOLOV8_POSE_SNPE_SNPEENGINE_H
+#endif //SNPE_SNPEENGINE_H

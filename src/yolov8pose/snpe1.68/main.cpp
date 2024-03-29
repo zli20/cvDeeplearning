@@ -5,7 +5,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "Yolov8FaceSnpe.h"
+#include "Yolov8PoseSnpe.h"
 #include "Datatype.h"
 
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     std::cout << "inputpath: " << img_path << std::endl;
     auto *YoloV8_engine = new Yolov8FaceSnpe(modelpath, cv::Size(640, 640), platform);
 
-    std::vector<FACE_RESULT> results;
+    std::vector<POSE_RESULT> results;
 
     size_t dotPos = img_path.find_last_of('.');
     if (dotPos == std::string::npos) {
