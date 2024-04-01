@@ -14,6 +14,8 @@ class Yolov8DetSnpe :public SnpeEngine{
 public:
     explicit  Yolov8DetSnpe(const std::string& model_path, const cv::Size img_size, const int platform) : SnpeEngine(img_size)
     {
+        // In dsp, the last layer of classification error with sigmod,requires custom post-processing function
+        // YOLOV8在dsp运行时，最后一层分类部分经过sigmod出错，需要提取数据处理
         if (1 < platform) {
             const std::vector<std::string>  outnames{"Concat_271", "Split_227"};
             this->setOutName(outnames);
@@ -33,6 +35,7 @@ public:
     static inline float sigmoid(float x) {
         return 1 / (1 + exp(-x));
     }
+    static void cvSigmoid(cv::Mat& mat);
 
     // void Preprocessing(cv::Mat &img);
     void preProcessing(cv::Mat &img, float & det_scale) const;

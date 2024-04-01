@@ -182,3 +182,9 @@ void Yolov8DetSnpe::drawResult(cv::Mat &img, const std::vector<DET_RESULT> & res
         }
     }
 }
+
+void Yolov8DetSnpe::cvSigmoid(cv::Mat& mat) {
+    cv::exp(-mat, mat);
+    mat += 1.0;
+    cv::divide(1.0, mat, mat);
+}

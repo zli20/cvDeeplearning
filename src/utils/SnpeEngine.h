@@ -48,8 +48,6 @@ public:
 
     int inference();
 
-    static void cvSigmoid(cv::Mat& mat);
-
     cv::Size model_input_size;
     int model_input_width;
     int model_input_hight;

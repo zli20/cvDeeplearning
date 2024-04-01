@@ -414,11 +414,7 @@ void SnpeEngine::Preprocessing(cv::Mat &img, float &detScale) const{
 #endif
 
 
-void SnpeEngine::cvSigmoid(cv::Mat& mat) {
-    cv::exp(-mat, mat);
-    mat += 1.0;
-    cv::divide(1.0, mat, mat);
-}
+
 
 // template<typename T>
 // void SnpeEngine::Postprocessing(std::vector<T> & _results, float det_scale) const {
