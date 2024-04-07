@@ -13,26 +13,27 @@
 int platform;
 
 int main(int argc, char* argv[]) {
-    // 检查是否有足够的命令行参数
     if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " int <platdorm> " << " string <modelpath> " << " string <inputpath> "<< std::endl;
-        std::cerr << "platdorm: " << " 0->CPU " << " 1->GPU " << " 2->DSP " << " 3->AIP " <<std::endl;
-        return 1;
+        std::cerr << "Usage: " << argv[0] << " string <cfg path pfld> " << " string <cfg path face det> " << " string <input path> " << std::endl;
+        return -1;
     }
+    Maincfg& cfg = Maincfg::instance();
+    std::string pfld_cfg_path;
+    pfld_cfg_path = argv[1];
+    std::cout << "cfg path pfld: " << pfld_cfg_path << std::endl;
+    cfg.LoadCfg(pfld_cfg_path);
+    auto *Pfld_engine = new PfldSnpe();
 
-    std::string modelpath;
-    modelpath = argv[2];
-    std::cout << "retinaface modelpath: " << modelpath << std::endl;
-
-    std::string modelpath2;
-    modelpath2 = argv[3];
-    std::cout << "pfld modelpath: " << modelpath2 << std::endl;
+    std::string det_cfg_path;
+    det_cfg_path = argv[2];
+    std::cout << "cfg path det: " << det_cfg_path << std::endl;
+    cfg.LoadCfg(det_cfg_path);
+    auto *Retina_engine = new RetinafaceSnpe();
 
     std::string img_path;
-    img_path = argv[4];
+    img_path = argv[3];
     std::cout << "inputpath: " << img_path << std::endl;
-    auto *Retina_engine = new RetinafaceSnpe(modelpath, cv::Size(640, 640), platform);
-    auto *Pfld_engine = new PfldSnpe(modelpath2, cv::Size(112, 112), platform);
+
     std::vector<FACE_RESULT> results;
 
     size_t dotPos = img_path.find_last_of('.');
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
             cv::resize(cvmat, resized_img, cv::Size(new_width, new_height));
         }
         // 显示调整后的图像
-        imshow("yolov8n", resized_img);
+        imshow("result_mat", resized_img);
         cv::waitKey(0);
     }
     else if (extension == "avi" || extension == "mp4") {
@@ -111,14 +112,13 @@ int main(int argc, char* argv[]) {
             //     break;
             // }
             auto start = static_cast<double>(cv::getTickCount());
-            Retina_engine->getInference(frame, results);
+            Retina_engine->getInference(result_mat, results);
+            Pfld_engine->getInference(result_mat, results);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "---------Inference Time cost : " << time_cost << "ms" << std::endl;
-
-            // YoloV8_engine->drawResult(result_mat, results);
-
-            cv::imshow("YOLOv8: ", result_mat);
+            Pfld_engine->drawResult(result_mat, results);
+            cv::imshow("Result: ", result_mat);
             if(cv::waitKey(30) == 27) // Wait for 'esc' key press to exit
             {
                 break;
@@ -134,6 +134,9 @@ int main(int argc, char* argv[]) {
 
     delete Retina_engine;
     Retina_engine = nullptr;
+
+    delete Pfld_engine;
+    Pfld_engine = nullptr;
     // cv::destroyAllWindows();
     return 0;
 }

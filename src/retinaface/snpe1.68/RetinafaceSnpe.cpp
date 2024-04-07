@@ -14,12 +14,12 @@ void RetinafaceSnpe::postProcessing(std::vector<FACE_RESULT> &_results, float de
     std::vector<cv::Rect> boxes;
     std::vector<int> labels;
     std::vector<std::vector<float>> landmarks;
-    auto * boxptr = this->_out_data_ptr["boxes"];
-    auto * kpsptr = this->_out_data_ptr["landmarks"];
-    auto * clsptr = this->_out_data_ptr["classes"];
+    auto * boxptr = this->_out_data_ptr[Maincfg::instance().model_output_tensor_name[0]];
+    auto * kpsptr = this->_out_data_ptr[Maincfg::instance().model_output_tensor_name[1]];
+    auto * clsptr = this->_out_data_ptr[Maincfg::instance().model_output_tensor_name[2]];
 
     std::vector<ANCHOR> anchors;
-    create_anchor_retinaface(anchors, this->_model_input_width,this->_model_input_hight);
+    create_anchor_retinaface(anchors, this->_model_input_width,this->_model_input_height);
 
     for (auto anchor : anchors)
     {
@@ -32,25 +32,25 @@ void RetinafaceSnpe::postProcessing(std::vector<FACE_RESULT> &_results, float de
             tmp_anchor.sy = anchor.sy * exp(boxptr[3] * 0.2);
 
             float xmin = std::max((tmp_anchor.cx - tmp_anchor.sx/2) * this->_model_input_width / width_scale / det_scale, 0.f) ;
-            float ymin = std::max((tmp_anchor.cy - tmp_anchor.sy/2) * this->_model_input_hight / higth_scale / det_scale, 0.f) ;
+            float ymin = std::max((tmp_anchor.cy - tmp_anchor.sy/2) * this->_model_input_height / higth_scale / det_scale, 0.f) ;
             float xmax = std::min((tmp_anchor.cx + tmp_anchor.sx/2) * this->_model_input_width / width_scale / det_scale, float(img_input_size.width - 1));
-            float ymax = std::min((tmp_anchor.cy + tmp_anchor.sy/2) * this->_model_input_hight / higth_scale / det_scale, float(img_input_size.height - 1));
+            float ymax = std::min((tmp_anchor.cy + tmp_anchor.sy/2) * this->_model_input_height / higth_scale / det_scale, float(img_input_size.height - 1));
             cv::Rect box = cv::Rect(xmin, ymin, (xmax - xmin), (ymax - ymin));
             float score = clsptr[1];
             std::vector<float>kpts;
-            for (int j = 0; j < 5; ++j)
+            for (int j = 0; j < this->kps_nums; ++j)
             {
                 kpts.push_back(((anchor.cx + kpsptr[2 * j] * 0.1 * anchor.sx) * this->_model_input_width) / width_scale / det_scale);
-                kpts.push_back(((anchor.cy + kpsptr[2 * j + 1] * 0.1 * anchor.sy) * this->_model_input_hight) / width_scale / det_scale);
+                kpts.push_back(((anchor.cy + kpsptr[2 * j + 1] * 0.1 * anchor.sy) * this->_model_input_height) / width_scale / det_scale);
             }
             boxes.push_back(box);
             confidences.push_back(score);
             labels.push_back(0);
             landmarks.push_back(kpts);
         }
-        boxptr += 4;
-        clsptr += 2;
-        kpsptr += 10;
+        boxptr += box_node_nums;
+        clsptr += cls_node_nums;
+        kpsptr += kps_node_nums;
     }
 
 #if 1
@@ -112,7 +112,7 @@ void RetinafaceSnpe::drawResult(cv::Mat& img, const std::vector<FACE_RESULT>& re
         top = std::max(top, labelSize.height);
         putText(img, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
 
-        for (int k = 0; k < this->num_point; k++)
+        for (int k = 0; k < this->kps_nums; k++)
         {
             int kpt_x = std::round(result.landmark[k * 2]);
             int kpt_y = std::round(result.landmark[k * 2 + 1]);

@@ -1,0 +1,23 @@
+%YAML:1.0
+---
+model_path: "/home/zli/Documents/deeplearning/code_cvDeeplearning_snpe/models/pfld_112.dlc"
+model_input_layer_name: ["input"]
+
+model_output_layer_name: ["fully_connected_0"]
+
+model_output_tensor_name: ["output"]
+
+model_input_width: 112
+model_input_hight: 112
+
+moudel_input_shape: [1, 112, 112, 3]
+
+moudel_output_shape: [ [1, 176] ]
+
+# 0->snpe 1->onnx 2->ncnn 3->dnn
+framework: 0
+# 0->cpu 1->gpu 2->dsp 3->aip
+runtime: 0
+
+
+

@@ -6,17 +6,19 @@ void PfldSnpe::postProcessing(std::vector<FACE_RESULT> &_results, int idx, float
     float higth_scale = 1.0;
     float width_scale = 1.0;
     if(!padding){
-        higth_scale = this->_model_input_hight / _results[idx].box.height;
+        higth_scale = this->_model_input_height / _results[idx].box.height;
         width_scale = this->_model_input_width / _results[idx].box.width;
     }
-    auto * pdata = this->_out_data_ptr["output"];
-    auto shape = this->_output_shapes["output"];
-    size_t data_size = shape[0] * shape[1];
-    for (size_t j = 0; j < data_size /2; j++) {
-        auto x = static_cast<float>(pdata[j * 2]) * this->_model_input_width / det_scale / width_scale +  _results[idx].box.x;
-        auto y = static_cast<float>(pdata[j * 2 + 1]) * this->_model_input_hight / det_scale / higth_scale + +  _results[idx].box.y;
-        _results[idx].mulkeypoints.push_back(x);
-        _results[idx].mulkeypoints.push_back(y);
+    for(const auto & it : this->_out_data_ptr){
+        auto *pdata = it.second;
+        auto shape= this->_output_shapes[it.first];
+        size_t data_size = shape[0] * shape[1];
+        for (size_t j = 0; j < data_size /2; j++) {
+            auto x = static_cast<float>(pdata[j * 2]) * this->_model_input_width / det_scale / width_scale +  _results[idx].box.x;
+            auto y = static_cast<float>(pdata[j * 2 + 1]) * this->_model_input_height / det_scale / higth_scale + +  _results[idx].box.y;
+            _results[idx].mulkeypoints.push_back(x);
+            _results[idx].mulkeypoints.push_back(y);
+        }
     }
 }
 
@@ -45,7 +47,7 @@ void PfldSnpe::drawResult(cv::Mat& img, const std::vector<FACE_RESULT>& results)
         putText(img, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
 
         if(!result.mulkeypoints.empty()) {
-            for (int k = 0; k < this->num_point; k++) {
+            for (int k = 0; k < this->kps_nums; k++) {
                 int kpt_x = std::round(result.mulkeypoints[k * 2]);
                 int kpt_y = std::round(result.mulkeypoints[k * 2 + 1]);
                 cv::Scalar kps_color = cv::Scalar(0, 255, 255);

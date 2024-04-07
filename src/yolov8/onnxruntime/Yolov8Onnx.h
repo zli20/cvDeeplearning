@@ -7,7 +7,7 @@
 
 class Yolov8Onnx : public InferenceOnnx {
 public:
-    explicit  Yolov8Onnx(const char* model_path, cv::Size img_size) : InferenceOnnx(model_path), img_size(img_size)
+    explicit  Yolov8Onnx(const char* model_path, cv::Size img_size) : InferenceOnnx(model_path), _img_size(img_size)
     {
     }
 
@@ -19,7 +19,7 @@ public:
 
 private:
 
-    cv::Size img_size = cv::Size(640,640);
+    cv::Size _img_size = cv::Size(640,640);
 
     int _anchorLength = 84;
     float _classThreshold = 0.2f;

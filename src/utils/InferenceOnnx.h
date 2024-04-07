@@ -10,24 +10,24 @@
 
 class InferenceOnnx {
 private:
-    Ort::Env* env;
-    Ort::Session* session;
+    Ort::Env* _env;
+    Ort::Session* _session;
 
-    std::string model_path;
+    std::string _model_path;
 
     int _init(Ort::Env* env = nullptr, const std::string& model_path = "", GraphOptimizationLevel opt_level = ORT_ENABLE_ALL, int threads = 0);
 
 public:
-    int input_count = 0;
-    int output_count = 0;
+    int _input_count = 0;
+    int _output_count = 0;
 
-    std::vector<std::string> input_names;
-    std::vector<std::string> output_names;
+    std::vector<std::string> _input_names;
+    std::vector<std::string> _output_names;
 
     // input dims
-    std::map<std::string, std::vector<int64_t>> input_shapes;
+    std::map<std::string, std::vector<int64_t>> _input_shapes;
     // output dims
-    std::map<std::string, std::vector<int64_t>> output_shapes;
+    std::map<std::string, std::vector<int64_t>> _output_shapes;
 
     InferenceOnnx();
     explicit InferenceOnnx(const char* model_path);
@@ -54,7 +54,7 @@ public:
 };
 
 inline std::ostream& operator<<(std::ostream& os, const std::vector<int64_t>& v) {
-    int count = 0;
+    size_t count = 0;
     os << "[ ";
     for (auto item : v) {
         os << item;
@@ -67,21 +67,21 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<int64_t>& v)
 }
 
 inline std::ostream& operator<<(std::ostream& os, const InferenceOnnx& model) {
-    if (!model.input_count)
+    if (!model._input_count)
         os << "ONNX Model presents no inputs, model is probably not initialized" << std::endl;
     else {
         os << "Loaded Model Parameters [" << std::endl
-            << "\t Input Count: " << model.input_count << std::endl
-            << "\t Output Count: " << model.output_count << std::endl
+            << "\t Input Count: " << model._input_count << std::endl
+            << "\t Output Count: " << model._output_count << std::endl
             << "\t Inputs and Shapes: [" << std::endl;
 
-        for (const auto& item : model.input_shapes)
+        for (const auto& item : model._input_shapes)
             os << "\t\t" << item.first << ": " << item.second << std::endl;
 
         os << "\t ]" << std::endl << "\t Outputs and Shapes: [";
-        if (!model.output_shapes.empty()) os << std::endl;
+        if (!model._output_shapes.empty()) os << std::endl;
 
-        for (const auto& item : model.output_shapes)
+        for (const auto& item : model._output_shapes)
             os << "\t\t" << item.first << ": " << item.second << std::endl;
 
         os << "\t ]" << std::endl;

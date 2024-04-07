@@ -5,7 +5,7 @@
 int Yolov8Onnx::getInference(cv::Mat& img, std::vector<DET_RESULT> & results)
 {
 	float det_scale;
-	resize_padding(img, det_scale, this->img_size);
+	resize_padding(img, det_scale, this->_img_size);
 	//img.convertTo(img, CV_8U);
 	img = cv::dnn::blobFromImage(img, 1.0/255, cv::Size(), cv::Scalar(103, 117, 123), true, false, CV_32F);
 	auto output_tensor = this->Inference(img);
@@ -35,7 +35,7 @@ void Yolov8Onnx::drawResult(cv::Mat& img, const std::vector<DET_RESULT>& results
 
         cv::rectangle(img, boxxs, cv::Scalar(0, 0, 255), 1, 8);
 
-        if (result.label >= 0 && result.label < cocoClassNamesList.size()) {
+        if (result.label >= 0 && result.label < static_cast<int>(cocoClassNamesList.size())) {
             std::string label = cocoClassNamesList[result.label] + ":" + std::to_string(result.confidence);
             int baseLine;
             cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
@@ -51,7 +51,7 @@ void Yolov8Onnx::drawResult(cv::Mat& img, const std::vector<DET_RESULT>& results
 
 void Yolov8Onnx::postProcessing(float* data, float det_scale, std::vector<DET_RESULT> & results) {
     // std::cout << (int)_outputTensorShape[2] << " " << (int)_outputTensorShape[1] << std::endl;
-    std::vector<int64_t>_outputTensorShape = output_shapes.begin()->second;
+    std::vector<int64_t>_outputTensorShape = this->_output_shapes.begin()->second;
 
     cv::Mat output0 = cv::Mat(cv::Size((int)_outputTensorShape[2], (int)_outputTensorShape[1]), CV_32F, data).t();
     auto* pdata = (float*)output0.data;
@@ -60,7 +60,7 @@ void Yolov8Onnx::postProcessing(float* data, float det_scale, std::vector<DET_RE
     std::vector<float> confidences;
     std::vector<cv::Rect> boxes;
     std::vector<int> labels;
-    int socre_array_length = _anchorLength - 4;
+    int socre_array_length = this->_anchorLength - 4;
     for (int r = 0; r < rows; ++r) {
         cv::Mat scores(1, socre_array_length, CV_32FC1, pdata + 4);
 

@@ -5,30 +5,24 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "RetinafaceSnpe.h"
-#include "Datatype.h"
-
-
-int platform;
+#include "MidasSnpe.h"
+#include "Maincfg.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " string <cfg path> " << " string <input path> " << std::endl;
         return -1;
     }
+    Maincfg& cfg = Maincfg::instance();
     std::string cfg_path;
     cfg_path = argv[1];
     std::cout << "cfg path: " << cfg_path << std::endl;
-
-    Maincfg& cfg = Maincfg::instance();
     cfg.LoadCfg(cfg_path);
+    auto *_engine = new MidasSnpe();
 
     std::string img_path;
     img_path = argv[2];
     std::cout << "inputpath: " << img_path << std::endl;
-    auto *_engine = new RetinafaceSnpe();
-
-    std::vector<FACE_RESULT> results;
 
     size_t dotPos = img_path.find_last_of('.');
     if (dotPos == std::string::npos) {
@@ -47,36 +41,17 @@ int main(int argc, char* argv[]) {
         while(nums > 0) {
             cv::Mat result_mat = cvmat.clone();
             auto start = static_cast<double>(cv::getTickCount());
-            _engine->getInference(result_mat, results);
+            _engine->getInference(result_mat);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
-            std::cout << "--------------------------All Time cost : " << time_cost << "ms" << std::endl;
+            std::cout << "------------------------All Time cost : " << time_cost << "ms" << std::endl;
             nums --;
         }
-        _engine->drawResult(cvmat, results);
-
-        // cv::imwrite("../images/result_mat.jpg", result_mat);
-
-        // imshow("yolov8", cvmat);
-        // cv::waitKey(0);
-
-        cv::Mat resized_img;
-        if (cvmat.cols != 640 || cvmat.rows != 640) {
-            int new_height, new_width;
-            float im_ratio = float(cvmat.rows) / float(cvmat.cols);
-            if (im_ratio > 1) {
-                new_height = 640;
-                new_width = int(new_height / im_ratio);
-            }
-            else {
-                new_width = 640;
-                new_height = int(new_width * im_ratio);
-            }
-
-            cv::resize(cvmat, resized_img, cv::Size(new_width, new_height));
-        }
-        imshow("yolov8n", resized_img);
+        _engine->drawResult(cvmat);
+//        imshow("orig", cvmat);
+        imshow("result", _engine->result_mat_resize_color);
         cv::waitKey(0);
+
     }
     else if (extension == "avi" || extension == "mp4") {
         std::cout << "Processing video: " << img_path << std::endl;
@@ -104,12 +79,12 @@ int main(int argc, char* argv[]) {
             //     break;
             // }
             auto start = static_cast<double>(cv::getTickCount());
-            _engine->getInference(frame, results);
+            _engine->getInference(frame);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "---------Inference Time cost : " << time_cost << "ms" << std::endl;
 
-            _engine->drawResult(result_mat, results);
+            // YoloV8_engine->drawResult(result_mat, results);
 
             cv::imshow("YOLOv8: ", result_mat);
             if(cv::waitKey(30) == 27) // Wait for 'esc' key press to exit
@@ -118,7 +93,6 @@ int main(int argc, char* argv[]) {
             }
 
             // video.write(result_mat);
-            results.clear();
         }
         capture.release();
         video.release();

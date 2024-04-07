@@ -51,9 +51,9 @@ void SnpeEngine::setruntime(const int platform) {// 设置推理硬件顺序
 
 void SnpeEngine::preProcessing(cv::Mat &img, float & det_scale, bool padding, bool normalize, bool mean, bool bgr2rgb) const{
     det_scale=1.0;
-    if(img.size() != _model_input_size) {
-        if(padding){resize_padding(img, det_scale, this->_model_input_size);}
-        else{cv::resize(img, img, cv::Size(_model_input_hight, _model_input_width));}
+    if(img.size() != cv::Size(_model_input_width, _model_input_height)) {
+        if(padding){resize_padding(img, det_scale, cv::Size(_model_input_width, _model_input_height));}
+        else{cv::resize(img, img, cv::Size(_model_input_height, _model_input_width));}
 
     }
     // cv::imshow("YOLOv8: ", img);
@@ -117,7 +117,7 @@ void SnpeEngine::build_tensor(const cv::Mat &mat) {
     zdl::DlSystem::Dimension dims[4];
     dims[0] = 1;
     dims[1] = _model_input_width;
-    dims[2] = _model_input_hight;
+    dims[2] = _model_input_height;
     dims[3] = 3;
     zdl::DlSystem::TensorShape tensorShape(dims, 4);
     _input_tensor = zdl::SNPE::SNPEFactory::getTensorFactory().createTensor(tensorShape);

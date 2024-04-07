@@ -19,7 +19,7 @@ link_directories(
         ${ONNXRUNTIME_LIB_PATH}
         ${SNPE_LIB_PATH}
 )
-#add_subdirectory(midas)
+add_subdirectory(midas)
 add_subdirectory(pfld)
 add_subdirectory(retinaface)
 add_subdirectory(yolov8)

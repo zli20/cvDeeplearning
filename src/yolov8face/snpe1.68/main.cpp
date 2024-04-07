@@ -9,24 +9,22 @@
 #include "Datatype.h"
 
 
-int platform;
-
 int main(int argc, char* argv[]) {
-   // 检查是否有足够的命令行参数
-    if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " int <platdorm> " << " string <modelpath> " << " string <inputpath> "<< std::endl;
-        std::cerr << "platdorm: " << " 0->CPU " << " 1->GPU " << " 2->DSP " << " 3->AIP " <<std::endl;
-        return 1;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " string <cfg path> " << " string <input path> " << std::endl;
+        return -1;
     }
+    std::string cfg_path;
+    cfg_path = argv[1];
+    std::cout << "cfg path: " << cfg_path << std::endl;
 
-    std::string modelpath;
-    modelpath = argv[2];
-    std::cout << "modelpath: " << modelpath << std::endl;
+    Maincfg& cfg = Maincfg::instance();
+    cfg.LoadCfg(cfg_path);
 
     std::string img_path;
-    img_path = argv[3];
+    img_path = argv[2];
     std::cout << "inputpath: " << img_path << std::endl;
-    auto *YoloV8_engine = new Yolov8FaceSnpe(modelpath, cv::Size(640, 640), platform);
+    auto *_engine = new Yolov8FaceSnpe();
 
     std::vector<FACE_RESULT> results;
 
@@ -46,13 +44,13 @@ int main(int argc, char* argv[]) {
         while(nums > 0) {
             cv::Mat result_mat = cvmat.clone();
             auto start = static_cast<double>(cv::getTickCount());
-            YoloV8_engine->getInference(result_mat, results);
+            _engine->getInference(result_mat, results);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "--------------------------All Time cost : " << time_cost << "ms" << std::endl;
             nums --;
         }
-        YoloV8_engine->drawResult(cvmat, results);
+        _engine->drawResult(cvmat, results);
 
         // cv::imwrite("../images/result_mat.jpg", result_mat);
 
@@ -75,7 +73,7 @@ int main(int argc, char* argv[]) {
             cv::resize(cvmat, resized_img, cv::Size(new_width, new_height));
         }
         // 显示调整后的图像
-        imshow("yolov8n", resized_img);
+        imshow("result", resized_img);
         cv::waitKey(0);
     }
     else if (extension == "avi" || extension == "mp4") {
@@ -104,7 +102,7 @@ int main(int argc, char* argv[]) {
             //     break;
             // }
             auto start = static_cast<double>(cv::getTickCount());
-            YoloV8_engine->getInference(frame, results);
+            _engine->getInference(frame, results);
             auto end = static_cast<double>(cv::getTickCount());
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "---------Inference Time cost : " << time_cost << "ms" << std::endl;
@@ -125,8 +123,8 @@ int main(int argc, char* argv[]) {
     } else {std::cout << "Unsupported file format: " << img_path << std::endl;}
 
 
-    delete YoloV8_engine;
-    YoloV8_engine = nullptr;
+    delete _engine;
+    _engine = nullptr;
     // cv::destroyAllWindows();
     return 0;
 }

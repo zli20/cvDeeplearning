@@ -15,17 +15,14 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/core/ocl.hpp"
 
-class PostProcessing;
-class PreProcessing;
-
-enum Platform {CPU=0, GPU, DSP, AIP  };
-
 
 class SnpeEngine
 {
 public:
-    explicit SnpeEngine(const cv::Size image_size):
-        _model_input_size(image_size), _model_input_width(image_size.width), _model_input_hight(image_size.height)
+
+    enum Platform {CPU=0, GPU, DSP, AIP  };
+
+    explicit SnpeEngine(int model_input_width, int _model_input_hight): _model_input_width(model_input_width), _model_input_height(_model_input_hight)
     {
         checkRuntime();
     };
@@ -37,11 +34,7 @@ public:
 
     int init(const std::string &model_path, int platform=CPU);
 
-//    int inference(const cv::Mat& cv_mat, std::map<std::string, float*> &out_tensor);
-
     void preProcessing(cv::Mat &img, float & det_scale, bool padding=false, bool normalize=true, bool mean=true, bool bgr2rgb=false) const;
-// virtual void postProcessing(std::vector<std::any> & _results, float det_scale) = 0;
-    // virtual void Preprocessing(cv::Mat &img, float & det_scale);
 
     void setOutName(const std::vector<std::string>& out_names);
 
@@ -49,9 +42,8 @@ public:
 
     int inference();
 
-    cv::Size _model_input_size;
     int _model_input_width;
-    int _model_input_hight;
+    int _model_input_height;
     Platform _platform = CPU;
 
     // snpe model

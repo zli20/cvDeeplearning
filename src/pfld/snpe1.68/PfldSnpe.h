@@ -5,17 +5,17 @@
 #include <string>
 #include <iostream>
 #include "Datatype.h"
+#include "Maincfg.h"
 
 class PfldSnpe : public SnpeEngine{
 public:
 
-    explicit  PfldSnpe(const std::string& model_path, const cv::Size img_size, const int platform) : SnpeEngine(img_size)
+    explicit  PfldSnpe() : SnpeEngine(Maincfg::instance().model_input_width, Maincfg::instance().model_input_hight)
     {
-        const std::vector<std::string>  outnames{"fully_connected_0"};
-        this->setOutName(outnames);
+        this->setOutName(Maincfg::instance().model_output_layer_name);
         // initialization models
-        if (init(model_path, platform) != 0) {
-            throw std::runtime_error("Failed to init model");
+        if (init(Maincfg::instance().model_path, Maincfg::instance().runtime) != 0) {
+            throw std::runtime_error("Faild to init model");
         }
     }
 
@@ -31,7 +31,7 @@ public:
 
     static int getMaxface(const std::vector<FACE_RESULT>& results);
 
-    const int num_point = 68;
+    const int kps_nums = 68;
 
 };
 

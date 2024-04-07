@@ -3,42 +3,30 @@
 #include <cmath>
 
 
-void Yolov8FaceSnpe::preProcessing(cv::Mat &img, float & det_scale) const{
-	det_scale=1.0;
-	if(img.size() != model_input_size) {
-		// resize_padding(img, det_scale, this->img_input_size);
-		cv::resize(img, img, cv::Size(model_input_hight, model_input_width));
-	}
-	// cv::imshow("YOLOv8: ", img);
-	// cv::waitKey();
-	img.convertTo(img, CV_32F, 1.0/255);
-	cv::Scalar meanValues(103.0 / 255, 117.0 / 255, 123.0 / 255);
-	img -= meanValues;
-	// BGR to RGB
-	// cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-
-}
-
 int Yolov8FaceSnpe::getInference(const cv::Mat &img, std::vector<POSE_RESULT>& results) {
 	this->img_input_size = img.size();
 	cv::Mat input_mat(img);
 
 	float det_scale;
-	preProcessing(input_mat, det_scale);
+	preProcessing(input_mat, det_scale, true, true, true, true);
 
 	build_tensor(input_mat);
 
 	this->inference();
 
 	results.clear();
-	postProcessing(results, det_scale);
+    postProcessing(results, det_scale, true);
 	return 0;
 
 }
 
-void Yolov8FaceSnpe::postProcessing(std::vector<POSE_RESULT> & _results, float det_scale) {
-	float higth_scale = 640.0 / this->img_input_size.height;
-	float width_scale = 640.0 / this->img_input_size.width;
+void Yolov8FaceSnpe::postProcessing(std::vector<POSE_RESULT> & _results, float det_scale, bool padding) {
+    float higth_scale = 1.0;
+    float width_scale = 1.0;
+    if(!padding){
+        higth_scale = this->_model_input_height / static_cast<float>(this->img_input_size.height);
+        width_scale = this->_model_input_width / static_cast<float>(this->img_input_size.width);
+    }
 
 	std::vector<float> confidences;
 	std::vector<cv::Rect> boxes;
@@ -46,7 +34,7 @@ void Yolov8FaceSnpe::postProcessing(std::vector<POSE_RESULT> & _results, float d
 	std::vector<std::vector<float>> kpss;
 
 	for(const auto& it : this->_out_data_ptr) {
-		std::cout << it.first <<" "<< it.second << std::endl;
+//		std::cout << it.first <<" "<< it.second << std::endl;
 		auto *data = it.second;
 		auto shape= this->_output_shapes[it.first];
 
@@ -58,18 +46,18 @@ void Yolov8FaceSnpe::postProcessing(std::vector<POSE_RESULT> & _results, float d
 			float score = pdata[4];
 			if (score > target_conf_th) {
 				// rect [x,y,w,h]
-				float x = pdata[0] / width_scale; //x
-				float y = pdata[1] / higth_scale; //y
-				float w = pdata[2] / width_scale; //w
-				float h = pdata[3] / higth_scale; //h
+				float x = pdata[0] / width_scale / det_scale; //x
+				float y = pdata[1] / higth_scale / det_scale; //y
+				float w = pdata[2] / width_scale / det_scale; //w
+				float h = pdata[3] / higth_scale / det_scale; //h
 
-				int left = MAX(int(x - 0.5 * w + 0.5), 0);
-				int top = MAX(int(y - 0.5 * h + 0.5), 0);
+				int left = MAX(lround(x - 0.5 * w + 0.5), 0);
+				int top = MAX(lround(y - 0.5 * h + 0.5), 0);
 
 				std::vector<float> kps;
-				for (int k = 0; k < this->num_point; k++) {
-					float kps_x = (*(kps_ptr + 3 * k) / width_scale);
-					float kps_y = (*(kps_ptr + 3 * k + 1) / higth_scale);
+				for (int k = 0; k < this->kps_nums; k++) {
+					float kps_x = (*(kps_ptr + 3 * k) / width_scale / det_scale);
+					float kps_y = (*(kps_ptr + 3 * k + 1) / higth_scale / det_scale);
 					float kps_s = *(kps_ptr + 3 * k + 2);
 
 					kps.push_back(kps_x);
@@ -79,9 +67,9 @@ void Yolov8FaceSnpe::postProcessing(std::vector<POSE_RESULT> & _results, float d
 				confidences.push_back(score);
 				labels.push_back(0);
 				kpss.push_back(kps);
-				boxes.emplace_back(left, top, int(w + 0.5), int(h + 0.5));
+				boxes.emplace_back(left, top, lround(w + 0.5), lround(h + 0.5));
 			}
-			pdata += out_nums;
+			pdata += out_node_nums;
 		}
 	}
 
@@ -124,7 +112,7 @@ void Yolov8FaceSnpe::drawResult(cv::Mat& img, const std::vector<POSE_RESULT>& re
 		top = std::max(top, labelSize.height);
 		putText(img, label, cv::Point(left, top), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
 
-		for (int k = 0; k < this->num_point; k++) {
+		for (int k = 0; k < this->kps_nums; k++) {
 			int kpt_x = std::round(result.landmark[k * 3]);
 			int kpt_y = std::round(result.landmark[k * 3 + 1]);
 			float kpt_conf = result.landmark[k * 3 + 2];

@@ -1,41 +1,38 @@
-#ifndef YOLOV8FACESNPE_H
-#define YOLOV8FACESNPE_H
+#ifndef YOLOV8_POSE_SNPE_H
+#define YOLOV8_POSE_SNPE_H
 
 #include <SnpeEngine.h>
 #include <string>
 #include "Datatype.h"
+#include "Maincfg.h"
 
 class Yolov8FaceSnpe :public SnpeEngine{
     public:
-    explicit  Yolov8FaceSnpe(const std::string& model_path, const cv::Size img_size, const int platform) : SnpeEngine(img_size)
+    explicit  Yolov8FaceSnpe() : SnpeEngine(Maincfg::instance().model_input_width, Maincfg::instance().model_input_hight)
     {
-
-        const std::vector<std::string>  outnames{"Concat_330"};
-        this->setOutName(outnames);
+        this->setOutName(Maincfg::instance().model_input_layer_name);
         // initialization models
-        if (init(model_path, platform) != 0) {
+        if (init(Maincfg::instance().model_path, Maincfg::instance().runtime) != 0) {
             throw std::runtime_error("Faild to init model");
         }
+        target_conf_th = Maincfg::instance().target_conf_th;
+        nms_th = Maincfg::instance().nms_th;
     }
 
     ~Yolov8FaceSnpe() override= default;
 
-    // void Preprocessing(cv::Mat &img);
-    void preProcessing(cv::Mat &img, float & det_scale) const;
-
-    void postProcessing(std::vector<POSE_RESULT> & _results, float det_scale);
+    void postProcessing(std::vector<POSE_RESULT> & _results, float det_scale, bool padding);
 
     int getInference(const cv::Mat& img, std::vector<POSE_RESULT>& results);
 
     void drawResult(cv::Mat& img, const std::vector<POSE_RESULT>& results) const;
 
     cv::Size img_input_size;
-    const float target_conf_th = 0.5;
-    const float nms_th = 0.2;
-    const int out_nums = 56; // 4 + 1 +17 * 3
-    const int num_point = 17;
+    float target_conf_th = 0.5;
+    float nms_th = 0.2;
+    const int out_node_nums = 56; // 4 + 1 +17 * 3
+    const int kps_nums = 17;
 };
 
 
-
-#endif //YOLOV8FACESNPE_H
+#endif //YOLOV8_POSE_SNPE_H
