@@ -5,7 +5,6 @@
 #include "matrix.h"
 
 #include <string>
-#include <iostream>
 
 DeepsortTracker::DeepsortTracker(
                  float max_cosine_distance, int nn_budget,
@@ -33,10 +32,8 @@ void DeepsortTracker::predict()
 
 void DeepsortTracker::update(const DETECTIONS &detections)
 {
-    // // ????????????????
     // predict();
 
-    // ???
     TRACHER_MATCHD res;
     _match(detections, res);
 
@@ -85,7 +82,6 @@ void DeepsortTracker::update(const DETECTIONS &detections)
 
 void DeepsortTracker::_match(const DETECTIONS &detections, TRACHER_MATCHD &res)
 {
-    // ?????????????????????????
     std::vector<int> confirmed_tracks;
     std::vector<int> unconfirmed_tracks;
     int idx = 0;
@@ -98,7 +94,6 @@ void DeepsortTracker::_match(const DETECTIONS &detections, TRACHER_MATCHD &res)
         idx++;
     }
 
-    // ??????????????????????? ???¦Ä?????????????¦Ä????????
     TRACHER_MATCHD matcha = linear_assignment::getInstance()->matching_cascade(
         this, &DeepsortTracker::gated_matric,
         this->metric->mating_threshold,
@@ -107,25 +102,23 @@ void DeepsortTracker::_match(const DETECTIONS &detections, TRACHER_MATCHD &res)
         detections,
         confirmed_tracks);
 
-    // iou???¦Ä???????????¦Ä????????
-    // ???????????¦Ä?????????????¦Ä??????????
     std::vector<int> iou_track_candidates;
     iou_track_candidates.assign(unconfirmed_tracks.begin(), unconfirmed_tracks.end());
 
     std::vector<int>::iterator it;
     for (it = matcha.unmatched_tracks.begin(); it != matcha.unmatched_tracks.end();)
     {
-        int idx = *it;
-        if (tracks[idx].time_since_update == 1)
+        int idx_ = *it;
+        if (tracks[idx_].time_since_update == 1)
         { // push into unconfirmed
-            iou_track_candidates.push_back(idx);
+            iou_track_candidates.push_back(idx_);
             it = matcha.unmatched_tracks.erase(it);
             continue;
         }
         ++it;
     }
 
-    // iou???
+    // iou
     TRACHER_MATCHD matchb = linear_assignment::getInstance()->min_cost_matching(
         this, &DeepsortTracker::iou_cost,
         this->max_iou_distance,

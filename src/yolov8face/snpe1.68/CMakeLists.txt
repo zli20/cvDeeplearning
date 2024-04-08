@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${SNPE_ENGINE_INCLUDE_PATH}
 )
 
 link_directories(
@@ -18,8 +19,7 @@ set(YOLOV8_FACE_SOURCE_SNPE
         Yolov8FaceSnpe.h
 )
 
-add_executable(yolov8_face_snpe ${YOLOV8_FACE_SOURCE_SNPE} ${UTILS_SRC_FILES}  main.cpp)
+add_executable(yolov8_face_snpe ${YOLOV8_FACE_SOURCE_SNPE} ${UTILS_SRC_FILES} ${SNPE_ENGINE_SRC_FILES} main.cpp)
 
 target_link_libraries(yolov8_face_snpe ${SNPE_LIBS})
-target_link_libraries(yolov8_face_snpe ${ONNXRUNTIME_LIBS})
 target_link_libraries(yolov8_face_snpe ${OPENCV_LIBS})

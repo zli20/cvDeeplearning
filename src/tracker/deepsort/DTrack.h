@@ -1,8 +1,8 @@
 #ifndef DEEP_TRACK_H
 #define DEEP_TRACK_H
 
-#include "dataType.h"
-#include "KalmanFilter.h"
+#include "engine/mulTrackEngine/trackDataType.h"
+#include "engine/mulTrackEngine/KalmanFilter.h"
 
 class DTrack
 {
@@ -17,7 +17,7 @@ public:
     bool is_confirmed() const;
     bool is_deleted() const;
     bool is_tentative() const;
-    DETECTBOX to_tlwh();
+    DETECTBOX_TLWH to_tlwh();
     int time_since_update;
     int track_id;
     FEATURESS features;

@@ -33,7 +33,7 @@ FeatureTensor::~FeatureTensor()
 
 bool FeatureTensor::init(const std::string& model_path)
 {
-    feature_net = std::make_unique<SnpeEngine>(cv::Size(width_, height_));
+    feature_net = std::make_unique<SnpeEngine>(width_, height_);
     std::cout << "FeatureTensor::init() " << std::endl;
     feature_net->init(model_path, platform);
     return true;

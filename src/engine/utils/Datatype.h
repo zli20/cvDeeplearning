@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include <opencv2/opencv.hpp>
+#include "opencv2/opencv.hpp"
 
 using DET_RESULT = struct det{
     cv::Rect_<float> box;

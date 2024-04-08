@@ -5,7 +5,7 @@
 #include "ImageProcessing.h"
 void SnpeEngine::checkRuntime(){
     static zdl::DlSystem::Version_t Version = zdl::SNPE::SNPEFactory::getLibraryVersion();
-    std::cout << "SNPE Version: " << Version.asString().c_str() << std::endl; // 打印版本号
+    std::cout << "SNPE Version: " << Version.asString().c_str() << std::endl;
     if (zdl::SNPE::SNPEFactory::isRuntimeAvailable(zdl::DlSystem::Runtime_t::AIP_FIXED_TF)) {
         const char *aip_runtime_string = zdl::DlSystem::RuntimeList::runtimeToString(zdl::DlSystem::Runtime_t::AIP_FIXED_TF);
         std::cout << "Current SNPE runtime Support :   " << aip_runtime_string << std::endl;
@@ -31,7 +31,7 @@ void SnpeEngine::checkRuntime(){
     }
 }
 
-void SnpeEngine::setruntime(const int platform) {// 设置推理硬件顺序
+void SnpeEngine::setruntime(const int platform) {
     _runtime_list.clear();
     this->_platform = static_cast<Platform>(platform);
     switch (platform) {
@@ -145,12 +145,9 @@ int SnpeEngine::inference()
         return -1;
     }
 
-    // 遍历所有输出张量的名称
     for (const auto& tensorName : tensorNames) {
-        // 从 _output_tensor_map 中获取对应的张量指针
         zdl::DlSystem::ITensor* tensor = _output_tensor_map.getTensor(tensorName);
         if (tensor != nullptr) {
-            // 将张量指针存储到map中
             auto *pdata = reinterpret_cast<float *>(&(*tensor->begin()));
             zdl::DlSystem::TensorShape shape = tensor->getShape();
             _out_data_ptr[tensorName] = pdata;

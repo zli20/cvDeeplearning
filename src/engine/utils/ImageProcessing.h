@@ -2,7 +2,7 @@
 #define IMAGE_PROCESSING_H
 
 #include<fstream>
-#include<opencv2/opencv.hpp>
+#include"opencv2/opencv.hpp"
 
 // coco 80 class namees
 extern const std::vector<std::string> cocoClassNamesList;

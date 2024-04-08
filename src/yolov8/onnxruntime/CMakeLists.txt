@@ -21,7 +21,7 @@ set(SOURCE_FILES
         Yolov8Onnx.cpp
         Yolov8Onnx.h
         main.cpp
-        ../../utils/Datatype.h
+        ../../engine/utils/Datatype.h
 )
 
 add_executable(yolov8_onnx ${SOURCE_FILES} ${UTILS_SRC_FILES})

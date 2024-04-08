@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${SNPE_ENGINE_INCLUDE_PATH}
         ${CMAKE_CURRENT_SOURCE_DIR}/../../retinaface/snpe1.68/
 )
 
@@ -14,7 +15,7 @@ set(SOURCE_FILES_PFLD
         ${CMAKE_CURRENT_SOURCE_DIR}/../../retinaface/snpe1.68/RetinafaceSnpe.cpp
 )
 
-add_executable(pfld_snpe ${SOURCE_FILES_PFLD} ${UTILS_SRC_FILES} main.cpp)
+add_executable(pfld_snpe ${SOURCE_FILES_PFLD} ${UTILS_SRC_FILES} ${SNPE_ENGINE_SRC_FILES} main.cpp)
 
 target_link_libraries(pfld_snpe ${SNPE_LIBS})
 target_link_libraries(pfld_snpe ${ONNXRUNTIME_LIBS})

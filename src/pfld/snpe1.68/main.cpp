@@ -8,7 +8,7 @@
 #include "RetinafaceSnpe.h"
 #include "PfldSnpe.h"
 #include "Datatype.h"
-
+#include "Maincfg.h"
 
 int platform;
 
