@@ -71,9 +71,9 @@ bool DTrack::is_tentative() const
     return this->state == TrackState::Tentative;
 }
 
-DETECTBOX DTrack::to_tlwh()
+DETECTBOX_TLWH DTrack::to_tlwh()
 {
-    DETECTBOX ret = mean.leftCols(4);
+    DETECTBOX_TLWH ret = mean.leftCols(4);
     ret(2) *= ret(3);
     ret.leftCols(2) -= (ret.rightCols(2) / 2);
     return ret;

@@ -18,7 +18,7 @@ public:
     Eigen::Matrix<float, 1, -1> gating_distance(
             const KAL_MEAN& mean,
             const KAL_COVA& covariance,
-            const std::vector<DETECTBOX_TLWH>& measurements,
+            const std::vector<DETECTBOX_XYAH>& measurements,
             bool only_position = false);
 
 private:

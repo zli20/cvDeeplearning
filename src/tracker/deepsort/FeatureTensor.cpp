@@ -1,46 +1,37 @@
 #include "FeatureTensor.h"
 #include <iostream>
 
-extern int platform;
-
 FeatureTensor *FeatureTensor::instance = nullptr;
 
-FeatureTensor *FeatureTensor::getInstance(const std::string& model_path)
+FeatureTensor *FeatureTensor::getInstance()
 {
     if (instance == nullptr)
     {
-        instance = new FeatureTensor(model_path);
+        instance = new FeatureTensor();
     }
     return instance;
 }
-FeatureTensor::FeatureTensor(const std::string& model_path)
-{
-    // prepare model:
-    bool status = init(model_path);
-    if (status == false)
-    {
-        std::cout << "init failed" << std::endl;
-        exit(1);
-    }
-    else
-    {
-        std::cout << "init succeed" << std::endl;
-    }
-}
+FeatureTensor::FeatureTensor()
+= default;
 FeatureTensor::~FeatureTensor()
 = default;
 
 
-bool FeatureTensor::init(const std::string& model_path)
+bool FeatureTensor::init(const std::string& model_path, int platform, int height, int width)
 {
-    feature_net = std::make_unique<SnpeEngine>(width_, height_);
+    this->height_ = height;
+    this->width_ = width;
+    feature_net = std::make_unique<SnpeEngine>(width, height);
     std::cout << "FeatureTensor::init() " << std::endl;
-    feature_net->init(model_path, platform);
+    if(feature_net->init(model_path, platform) != 0){
+        std::cout << "FeatureTensor::init() " << std::endl;
+        return false;
+    }
     return true;
 }
 
 // void FeatureTensor::preprocess(cv::Mat &imageBGR, std::vector<float> &inputTensorValues, size_t &inputTensorSize)
-void FeatureTensor::preprocess(cv::Mat &imageBGR)
+void FeatureTensor::preprocess(cv::Mat &imageBGR) const
 {
 
     cv::Mat resizedImageBGR, resizedImageRGB, resizedImage, preprocessedImage;

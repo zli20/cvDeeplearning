@@ -208,7 +208,7 @@ DeepsortTracker::iou_cost(
             cost_matrix.row(i) = Eigen::RowVectorXf::Constant(cols, INFTY_COST);
             continue;
         }
-        DETECTBOX bbox = tracks[track_idx].to_tlwh();
+        DETECTBOX_TLWH bbox = tracks[track_idx].to_tlwh();
         int csize = detection_indices.size();
         DETECTBOXSS candidates(csize, 4);
         for (int k = 0; k < csize; k++)
@@ -220,7 +220,7 @@ DeepsortTracker::iou_cost(
 }
 
 Eigen::VectorXf
-DeepsortTracker::iou(DETECTBOX &bbox, DETECTBOXSS &candidates)
+DeepsortTracker::iou(DETECTBOX_TLWH &bbox, DETECTBOXSS &candidates)
 {
     float bbox_tl_1 = bbox[0];
     float bbox_tl_2 = bbox[1];

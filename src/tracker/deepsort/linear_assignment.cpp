@@ -147,7 +147,7 @@ linear_assignment::gate_cost_matrix(
 {
     int gating_dim = (only_position == true?2:4);
     double gating_threshold = KalmanFilter::chi2inv95[gating_dim];
-    std::vector<DETECTBOX> measurements;
+    std::vector<DETECTBOX_XYAH> measurements;
     for(int i:detection_indices) {
         const DETECTION_ROW& t = detections[i];
         measurements.push_back(t.to_xyah());
