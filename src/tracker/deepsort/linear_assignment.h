@@ -1,6 +1,6 @@
 #ifndef LINEAR_ASSIGNMENT_H
 #define LINEAR_ASSIGNMENT_H
-#include "dataType.h"
+#include "trackDataType.h"
 #include "DeepsortTracker.h"
 
 #define INFTY_COST 1e5

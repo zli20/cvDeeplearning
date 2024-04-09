@@ -1,5 +1,4 @@
 #include "ByteTracker.h"
-#include <fstream>
 
 ByteTracker::ByteTracker(int frame_rate, int track_buffer, float track_thresh, float high_thresh, float match_thresh)
 {
@@ -12,8 +11,7 @@ ByteTracker::ByteTracker(int frame_rate, int track_buffer, float track_thresh, f
 }
 
 ByteTracker::~ByteTracker()
-{
-}
+= default;
 
 void ByteTracker::update(const DETECTIONS &objects)
 {
@@ -22,8 +20,8 @@ void ByteTracker::update(const DETECTIONS &objects)
 	this->frame_id++;
 	 std::vector<STrack> activated_stracks;
 	 std::vector<STrack> refind_stracks;
-	 std::vector<STrack> removed_stracks;
-	 std::vector<STrack> lost_stracks;
+	 std::vector<STrack> tmp_removed_stracks;
+	 std::vector<STrack> tmp_lost_stracks;
 	 std::vector<STrack> detections;
 	 std::vector<STrack> detections_low;
 
@@ -32,22 +30,22 @@ void ByteTracker::update(const DETECTIONS &objects)
 	 std::vector<STrack> resa, resb;
 
 	 std::vector<STrack*> unconfirmed;
-	 std::vector<STrack*> tracked_stracks;
+	 std::vector<STrack*> tmp_tracked_stracks;
 	 std::vector<STrack*> strack_pool;
 	 std::vector<STrack*> r_tracked_stracks;
 
-	if (objects.size() > 0)
+	if (!objects.empty())
 	{
-		for (int i = 0; i < objects.size(); i++)
+		for (const auto & object : objects)
 		{
 			 std::vector<float> tlbr_;
 			tlbr_.resize(4);
-            tlbr_[0] = objects[i].tlwh[0];
-            tlbr_[1] = objects[i].tlwh[1];
-            tlbr_[2] = objects[i].tlwh[0] +  objects[i].tlwh[2];
-            tlbr_[3] = objects[i].tlwh[1] +  objects[i].tlwh[3];
+            tlbr_[0] = object.tlwh[0];
+            tlbr_[1] = object.tlwh[1];
+            tlbr_[2] = object.tlwh[0] +  object.tlwh[2];
+            tlbr_[3] = object.tlwh[1] +  object.tlwh[3];
 
-            float score = objects[i].confidence;
+            float score = object.confidence;
 
 			STrack strack(STrack::tlbr_to_tlwh(tlbr_), score);
 			if (score >= track_thresh)
@@ -62,17 +60,17 @@ void ByteTracker::update(const DETECTIONS &objects)
 		}
 	}
 
-	// Add newly detected tracklets to tracked_stracks
-	for (int i = 0; i < this->tracked_stracks.size(); i++)
+	// Add newly detected tracklets to tmp_tracked_stracks
+	for (auto & tracked_strack : this->tracked_stracks)
 	{
-		if (!this->tracked_stracks[i].is_activated)
-			unconfirmed.push_back(&this->tracked_stracks[i]);
+		if (!tracked_strack.is_activated)
+			unconfirmed.push_back(&tracked_strack);
 		else
-			tracked_stracks.push_back(&this->tracked_stracks[i]);
+			tmp_tracked_stracks.push_back(&tracked_strack);
 	}
 
 	////////////////// Step 2: First association, with IoU //////////////////
-	strack_pool = joint_stracks(tracked_stracks, this->lost_stracks);
+	strack_pool = joint_stracks(tmp_tracked_stracks, this->lost_stracks);
 	STrack::multi_predict(strack_pool, this->kalman_filter);
 
 	std::vector< std::vector<float> > dists;
@@ -83,10 +81,10 @@ void ByteTracker::update(const DETECTIONS &objects)
 	 std::vector<int> u_track, u_detection;
 	linear_assignment(dists, dist_size, dist_size_size, match_thresh, matches, u_track, u_detection);
 
-	for (int i = 0; i < matches.size(); i++)
+	for (auto & matche : matches)
 	{
-		STrack *track = strack_pool[matches[i][0]];
-		STrack *det = &detections[matches[i][1]];
+		STrack *track = strack_pool[matche[0]];
+		STrack *det = &detections[matche[1]];
 		if (track->state == TrackState::Tracked)
 		{
 			track->update(*det, this->frame_id);
@@ -101,20 +99,20 @@ void ByteTracker::update(const DETECTIONS &objects)
 
 	////////////////// Step 3: Second association, using low score dets //////////////////
 
-	for (int i = 0; i < u_detection.size(); i++)
+	for (int i : u_detection)
 	{
-		detections_cp.push_back(detections[u_detection[i]]);
+		detections_cp.push_back(detections[i]);
 	}
 
 
 	detections.clear();
 	detections.assign(detections_low.begin(), detections_low.end());
 
-	for (int i = 0; i < u_track.size(); i++)
+	for (int i : u_track)
 	{
-		if (strack_pool[u_track[i]]->state == TrackState::Tracked)
+		if (strack_pool[i]->state == TrackState::Tracked)
 		{
-			r_tracked_stracks.push_back(strack_pool[u_track[i]]);
+			r_tracked_stracks.push_back(strack_pool[i]);
 		}
 	}
 
@@ -126,10 +124,10 @@ void ByteTracker::update(const DETECTIONS &objects)
 	u_detection.clear();
 	linear_assignment(dists, dist_size, dist_size_size, 0.5, matches, u_track, u_detection);
 
-	for (int i = 0; i < matches.size(); i++)
+	for (auto & matche : matches)
 	{
-		STrack *track = r_tracked_stracks[matches[i][0]];
-		STrack *det = &detections[matches[i][1]];
+		STrack *track = r_tracked_stracks[matche[0]];
+		STrack *det = &detections[matche[1]];
 		if (track->state == TrackState::Tracked)
 		{
 			track->update(*det, this->frame_id);
@@ -142,13 +140,13 @@ void ByteTracker::update(const DETECTIONS &objects)
 		}
 	}
 
-	for (int i = 0; i < u_track.size(); i++)
+	for (int i : u_track)
 	{
-		STrack *track = r_tracked_stracks[u_track[i]];
+		STrack *track = r_tracked_stracks[i];
 		if (track->state != TrackState::Lost)
 		{
 			track->mark_lost();
-			lost_stracks.push_back(*track);
+			tmp_lost_stracks.push_back(*track);
 		}
 	}
 
@@ -164,23 +162,23 @@ void ByteTracker::update(const DETECTIONS &objects)
 	u_detection.clear();
 	linear_assignment(dists, dist_size, dist_size_size, 0.7, matches, u_unconfirmed, u_detection);
 
-	for (int i = 0; i < matches.size(); i++)
+	for (auto & matche : matches)
 	{
-		unconfirmed[matches[i][0]]->update(detections[matches[i][1]], this->frame_id);
-		activated_stracks.push_back(*unconfirmed[matches[i][0]]);
+		unconfirmed[matche[0]]->update(detections[matche[1]], this->frame_id);
+		activated_stracks.push_back(*unconfirmed[matche[0]]);
 	}
 
-	for (int i = 0; i < u_unconfirmed.size(); i++)
+	for (int i : u_unconfirmed)
 	{
-		STrack *track = unconfirmed[u_unconfirmed[i]];
+		STrack *track = unconfirmed[i];
 		track->mark_removed();
-		removed_stracks.push_back(*track);
+		tmp_removed_stracks.push_back(*track);
 	}
 
 	////////////////// Step 4: Init new stracks //////////////////
-	for (int i = 0; i < u_detection.size(); i++)
+	for (int i : u_detection)
 	{
-		STrack *track = &detections[u_detection[i]];
+		STrack *track = &detections[i];
 		if (track->score < this->high_thresh)
 			continue;
 		track->activate(this->kalman_filter, this->frame_id);
@@ -188,20 +186,20 @@ void ByteTracker::update(const DETECTIONS &objects)
 	}
 
 	////////////////// Step 5: Update state //////////////////
-	for (int i = 0; i < this->lost_stracks.size(); i++)
+	for (auto & lost_strack : this->lost_stracks)
 	{
-		if (this->frame_id - this->lost_stracks[i].end_frame() > this->max_time_lost)
+		if (this->frame_id - lost_strack.end_frame() > this->max_time_lost)
 		{
-			this->lost_stracks[i].mark_removed();
-			removed_stracks.push_back(this->lost_stracks[i]);
+			lost_strack.mark_removed();
+			tmp_removed_stracks.push_back(lost_strack);
 		}
 	}
 
-	for (int i = 0; i < this->tracked_stracks.size(); i++)
+	for (auto & tracked_strack : this->tracked_stracks)
 	{
-		if (this->tracked_stracks[i].state == TrackState::Tracked)
+		if (tracked_strack.state == TrackState::Tracked)
 		{
-			tracked_stracks_swap.push_back(this->tracked_stracks[i]);
+			tracked_stracks_swap.push_back(tracked_strack);
 		}
 	}
 
@@ -215,16 +213,16 @@ void ByteTracker::update(const DETECTIONS &objects)
 
 
 	this->lost_stracks = sub_stracks(this->lost_stracks, this->tracked_stracks);
-	for (int i = 0; i < lost_stracks.size(); i++)
+	for (const auto & lost_strack : tmp_lost_stracks)
 	{
-		this->lost_stracks.push_back(lost_stracks[i]);
+		this->lost_stracks.push_back(lost_strack);
 	}
 
 	this->lost_stracks = sub_stracks(this->lost_stracks, this->removed_stracks);
 
-	for (int i = 0; i < removed_stracks.size(); i++)
+	for (const auto & removed_strack : tmp_removed_stracks)
 	{
-		this->removed_stracks.push_back(removed_stracks[i]);
+		this->removed_stracks.push_back(removed_strack);
 	}
 	
 
@@ -235,11 +233,12 @@ void ByteTracker::update(const DETECTIONS &objects)
 	this->lost_stracks.clear();
 	this->lost_stracks.assign(resb.begin(), resb.end());
 
-	for (int i = 0; i < this->tracked_stracks.size(); i++)
+    this->output_stracks.clear();
+	for (auto & tracked_strack : this->tracked_stracks)
 	{
-		if (this->tracked_stracks[i].is_activated)
+		if (tracked_strack.is_activated)
 		{
-			this->output_stracks.push_back(this->tracked_stracks[i]);
+			this->output_stracks.push_back(tracked_strack);
 		}
 	}
 }

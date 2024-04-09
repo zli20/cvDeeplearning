@@ -1,36 +1,44 @@
 #include "MulTrack.h"
 #include "FeatureTensor.h"
 
-MulObjTrack::MulObjTrack(TrackerType tracker_type_){
-    this->tracker_type = tracker_type_;
-    switch (tracker_type_) {
-        case BYTE_TRACKER:
-            bytetracker = ByteTracker(20, 30);
-            break;
-        case DEEPSORT_TRACKER:
-            deepsorttracker = DeepsortTracker(0.2, 100);
-            break;
-        default:
-            throw std::invalid_argument("Invalid tracker type");
-    }
-}
+//MulObjTrack::MulObjTrack(int tracker_type_){
+//    this->tracker_type = static_cast<TrackerType>(tracker_type_);
+//    switch (tracker_type_) {
+//        case BYTE_TRACKER:
+//            bytetracker = ByteTracker(20, 30);
+//            break;
+//        case DEEPSORT_TRACKER:
+//            deepsorttracker = DeepsortTracker(0.2, 100);
+//            break;
+//        default:
+//            throw std::invalid_argument("Invalid tracker type");
+//    }
+//}
 
-MulObjTrack::MulObjTrack(TrackerType tracker_type_, int frame_rate, int track_buffer, float track_thresh,
+MulObjTrack::MulObjTrack(int tracker_type_, int frame_rate, int track_buffer, float track_thresh,
                          float high_thresh, float match_thresh) {
     if(tracker_type_ != BYTE_TRACKER){
         throw std::invalid_argument("Invalid tracker type: Parameter list should match tracker");
     }
-    this->tracker_type = tracker_type_;
+    this->tracker_type = static_cast<TrackerType>(tracker_type_);
     bytetracker = ByteTracker(frame_rate, track_buffer, track_thresh, high_thresh, match_thresh);
 }
 
-MulObjTrack::MulObjTrack(TrackerType tracker_type_, const std::string & feature_model_path, float max_cosine_distance,
+MulObjTrack::MulObjTrack(int tracker_type_, const std::string & feature_model_path, int platform, float max_cosine_distance,
                          int nn_budget, float max_iou_distance, int max_age, int n_init) {
     if(tracker_type_ != DEEPSORT_TRACKER){
         throw std::invalid_argument("Invalid tracker type: Parameter list should match tracker");
     }
-    this->tracker_type = tracker_type_;
-    this->feature_model_path = feature_model_path;
+    if (!FeatureTensor::getInstance()->init(feature_model_path, platform))
+    {
+        std::cout << "Feature init failed" << std::endl;
+        exit(1);
+    }
+    else
+    {
+        std::cout << "Feature init succeed" << std::endl;
+    }
+    this->tracker_type = static_cast<TrackerType>(tracker_type_);
     deepsorttracker = DeepsortTracker(max_cosine_distance, nn_budget, max_iou_distance, max_age, n_init);
 }
 
@@ -54,8 +62,8 @@ void MulObjTrack::getTrack(cv::Mat &frame, std::vector<DET_RESULT> &results) {
             bytetracker.update(detections);
             break;
         case DEEPSORT_TRACKER:
-            if (FeatureTensor::getInstance(feature_model_path)->getRectsFeature(frame, detections)) {
-                std::cout << "get feature succeed!" << std::endl;
+            if (FeatureTensor::getInstance()->getRectsFeature(frame, detections)) {
+//                std::cout << "get feature succeed!" << std::endl;
                 deepsorttracker.predict();
                 deepsorttracker.update(detections);
             }else{std::cout << "get feature failed!" << std::endl;}
@@ -69,25 +77,27 @@ void MulObjTrack::getTrack(cv::Mat &frame, std::vector<DET_RESULT> &results) {
 void MulObjTrack::drawResult(cv::Mat &frame) {
     switch (this->tracker_type) {
         case BYTE_TRACKER:
-            for (unsigned long i = 0; i < bytetracker.output_stracks.size(); i++)
+            for (auto & output_strack : bytetracker.output_stracks)
             {
-                std::vector<float> tlwh = bytetracker.output_stracks[i].tlwh;
-                bool vertical = tlwh[2] / tlwh[3] > 1.6;
-                if (tlwh[2] * tlwh[3] > 20 && !vertical)
+                std::vector<float> tlwh = output_strack.tlwh;
+//                bool vertical = tlwh[2] / tlwh[3] > 1.6;
+//                if (tlwh[2] * tlwh[3] > 20 && !vertical)
                 {
-                    cv::Scalar s = bytetracker.get_color(bytetracker.output_stracks[i].track_id);
-                    cv::putText(frame, cv::format("%d", bytetracker.output_stracks[i].track_id), cv::Point(tlwh[0], tlwh[1] - 5),
+                    cv::Scalar s = bytetracker.get_color(output_strack.track_id);
+                    cv::putText(frame, cv::format("%d", output_strack.track_id), cv::Point(tlwh[0], tlwh[1] - 5),
                                 0, 0.6, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
                     cv::rectangle(frame, cv::Rect(tlwh[0], tlwh[1], tlwh[2], tlwh[3]), s, 2);
                 }
             }
+            break;
         case DEEPSORT_TRACKER:
             for(DTrack& track : deepsorttracker.tracks) {
                 if(!track.is_confirmed() || track.time_since_update > 1) continue;
                 DETECTBOX_TLWH bbox = track.to_tlwh();
                 cv::Rect rect = cv::Rect(bbox[0], bbox[1], bbox[2], bbox[3]);
-                rectangle(frame, rect, cv::Scalar(255, 255, 0), 2);
 
+                auto color_ = cv::Scalar(37 * track.track_id % 255, 17 * track.track_id % 255, 29 * track.track_id % 255);
+                rectangle(frame, rect, color_, 2);
                 std::string label = cv::format("%d", track.track_id);
                 cv::putText(frame, label, cv::Point(rect.x, rect.y), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(255, 255, 0), 2);
             }

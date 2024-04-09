@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include "Datatype.h"
 #include "Maincfg.h"
-
+#include "MulTrack.h"
 
 int main(int argc, char* argv[]) {
    // 检查是否有足够的命令行参数
@@ -27,6 +27,7 @@ int main(int argc, char* argv[]) {
     img_path = argv[2];
     std::cout << "inputpath: " << img_path << std::endl;
 
+    // init model
     auto *_engine = new Yolov8DetSnpe();
 
     std::vector<DET_RESULT> results;
@@ -81,6 +82,10 @@ int main(int argc, char* argv[]) {
     }
     else if (extension == "avi" || extension == "mp4") {
         std::cout << "Processing video: " << img_path << std::endl;
+
+        // auto * tracker = new MulObjTrack(0, 20, 30);
+        std::string feature_model_path = "/home/zli/Documents/deeplearning/code_cvDeeplearning_snpe/models/DSort_168_128_64.dlc";
+        auto * tracker = new MulObjTrack(1, feature_model_path, cfg.runtime);
         cv::VideoCapture capture;
         capture.open(img_path);
         if (!capture.isOpened()) {
@@ -110,19 +115,25 @@ int main(int argc, char* argv[]) {
             double time_cost = (end - start) / cv::getTickFrequency() * 1000;
             std::cout << "---------Inference Time cost : " << time_cost << "ms" << std::endl;
 
-            _engine->drawResult(result_mat, results);
+            //----tracker
+            tracker->getTrack(result_mat, results);
+            tracker->drawResult(result_mat);
 
-            cv::imshow("result: ", result_mat);
-            if(cv::waitKey(30) == 27) // Wait for 'esc' key press to exit
-            {
-                break;
-            }
+//             _engine->drawResult(result_mat, results);
 
-            // video.write(result_mat);
+//            cv::imshow("result: ", result_mat);
+//            if(cv::waitKey(30) == 27) // Wait for 'esc' key press to exit
+//            {
+//                break;
+//            }
+
+             video.write(result_mat);
             results.clear();
         }
         capture.release();
         video.release();
+        delete tracker;
+        tracker = nullptr;
     } else {std::cout << "Unsupported file format: " << img_path << std::endl;}
 
 

@@ -17,19 +17,25 @@ cvDeeplearning/
 ├── docs / # 介绍文档  
 ├── res / # 资源文件  
 ├──src/ # 源码  
-│   ├── utils/ # 数据类型定义 snpe、onnx推理模块封装  
+│   ├── engine/    
+│   │   ├──mulTrackEngine  # 目标跟踪模块  
+│   │   ├──onnxEngine  # onnx推理模块  
+│   │   ├──realsenseEngine  # realsense相机使用模块（Todo）  
+│   │   ├──snpeEngine  # snpe推理模块  
+│   │   └──utils/ # 公共数据和定义  
 │   ├── tracker/ # 多目标跟踪相关  
 │   ├── yolov8/  
 │   │   ├──snpe1.68  
-│   │   │   ├───Yolov8.h  
-│   │   │   ├───Yolov8.cpp  
+│   │   │   ├───Yolov8DetSnpe.h  
+│   │   │   ├───Yolov8DetSnpe.cpp  
 │   │   │   ├───main.cpp  
-│   │   │   └── CMakeLists.txt  
-│   │   ├──onnx # 目前先实现snpe，后续可能继续完成其他框架，ncnn、onnx、paddlelite等  
-│   │   └─── ....  
-│   ├── .....  # 其他方法定义及cmakelists  
+│   │   │   └───CMakeLists.txt  # 底层CMakeLists，可执行文件生成  
+│   │   ├──onnx # Todo，目前先实现snpe，后续可能继续完成其他框架   
+│   │   ├──....  
+│   │   └──CMakeLists  # 中间层CMakeLists，处理子文件其他方法定义及其cmakelists  
+│   ├── .....  # 其他方法定义及其cmakelists  
 │   ├── main.cpp  
-│   └── CMakeLists.txt  
+│   └── CMakeLists.txt  # 中间层CMakeLists，定义和链接代码文件  
 └── CMakeLists.txt # 顶层cmakelist，定义链接库目录  
 # 已实现方法：  
 1. 目标检测：  Yolov8  

@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "engine/mulTrackEngine/KalmanFilter.h"
+#include "KalmanFilter.h"
 #include "DTrack.h"
 
 class NearNeighborDisMetric;
@@ -52,7 +52,7 @@ public:
                 const DETECTIONS& dets,
                 const std::vector<int>& track_indices,
                 const std::vector<int>& detection_indices);
-        Eigen::VectorXf iou(DETECTBOX_TLWH& bbox,
+        static Eigen::VectorXf iou(DETECTBOX_TLWH& bbox,
                 DETECTBOXSS &candidates);
 
     static Eigen::Matrix<float, -1, 2, Eigen::RowMajor> SolveHungarian(const DYNAMICM &cost_matrix);

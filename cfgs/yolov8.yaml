@@ -20,6 +20,6 @@ framework: 0
 runtime: 0
 
 #nms parameter
-target_conf_th: 0.5
+target_conf_th: 0.2
 nms_th: 0.2
 

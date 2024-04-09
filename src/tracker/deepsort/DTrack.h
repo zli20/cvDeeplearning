@@ -1,8 +1,8 @@
 #ifndef DEEP_TRACK_H
 #define DEEP_TRACK_H
 
-#include "engine/mulTrackEngine/trackDataType.h"
-#include "engine/mulTrackEngine/KalmanFilter.h"
+#include "trackDataType.h"
+#include "KalmanFilter.h"
 
 class DTrack
 {

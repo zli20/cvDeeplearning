@@ -4,7 +4,7 @@
     @Author      : shaoshengsong
     @Date        : 2022-09-21 02:39:47
 */
-#include "engine/mulTrackEngine/trackDataType.h"
+#include "trackDataType.h"
 #include <chrono>
 #include <cmath>
 #include <exception>
@@ -46,27 +46,25 @@ std::ostream &operator<<(std::ostream &os, const std::vector<T> &v)
 class FeatureTensor
 {
 public:
-    static FeatureTensor *getInstance(const std::string& model_path);
+    static FeatureTensor *getInstance();
     bool getRectsFeature(const cv::Mat &img, DETECTIONS &d);
     // void preprocess(cv::Mat &imageBGR, std::vector<float> &inputTensorValues, size_t &inputTensorSize);
-
-
+    bool init(const std::string& model_path, int platform, int height_=64, int width_=128);
 private:
-    explicit FeatureTensor(const std::string& model_path);
+    FeatureTensor();
     FeatureTensor(const FeatureTensor &);
     FeatureTensor &operator=(const FeatureTensor &);
     static FeatureTensor *instance;
-    bool init(const std::string& model_path);
     ~FeatureTensor();
 
     // void tobuffer(const std::vector<cv::Mat> &imgs, uint8 *buf);
 
-    void preprocess(cv::Mat &imageBGR);
+    void preprocess(cv::Mat &imageBGR) const;
 public:
     // void test();
 
-    static constexpr int height_ = 64;
-    static constexpr int width_ = 128;
-
+    int height_ = 64;
+    int width_ = 128;
     std::unique_ptr<SnpeEngine> feature_net;
+
 };

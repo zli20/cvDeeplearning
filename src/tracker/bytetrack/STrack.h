@@ -1,7 +1,7 @@
 #ifndef STRACK_H
 #define STRACK_H
 #include <opencv2/opencv.hpp>
-#include "engine/mulTrackEngine/KalmanFilter.h"
+#include "KalmanFilter.h"
 
 enum TrackState { New = 0, Tracked, Lost, Removed };
 
@@ -15,12 +15,12 @@ public:
     static void  multi_predict( std::vector<STrack*> &stracks, KalmanFilter &kalman_filter);
 	void static_tlwh();
 	void static_tlbr();
-	 std::vector<float> tlwh_to_xyah( std::vector<float> tlwh_tmp);
+	 static std::vector<float> tlwh_to_xyah( std::vector<float> tlwh_tmp);
 	 std::vector<float> to_xyah();
 	void mark_lost();
 	void mark_removed();
-	int next_id();
-	int end_frame();
+	static int next_id();
+	int end_frame() const;
 	
 	void activate(KalmanFilter &kalman_filter, int frame_id);
 	void re_activate(STrack &new_track, int frame_id, bool new_id = false);

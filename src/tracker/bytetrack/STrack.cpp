@@ -35,7 +35,7 @@ void STrack::activate(KalmanFilter &kalman_filter, int frame_id)
 	_tlwh_tmp[2] = this->_tlwh[2];
 	_tlwh_tmp[3] = this->_tlwh[3];
 	 std::vector<float> xyah = tlwh_to_xyah(_tlwh_tmp);
-	DETECTBOX xyah_box;
+    DETECTBOX_XYAH xyah_box;
 	xyah_box[0] = xyah[0];
 	xyah_box[1] = xyah[1];
 	xyah_box[2] = xyah[2];
@@ -61,7 +61,7 @@ void STrack::activate(KalmanFilter &kalman_filter, int frame_id)
 void STrack::re_activate(STrack &new_track, int frame_id, bool new_id)
 {
 	 std::vector<float> xyah = tlwh_to_xyah(new_track.tlwh);
-	DETECTBOX xyah_box;
+    DETECTBOX_XYAH xyah_box;
 	xyah_box[0] = xyah[0];
 	xyah_box[1] = xyah[1];
 	xyah_box[2] = xyah[2];
@@ -88,7 +88,7 @@ void STrack::update(STrack &new_track, int frame_id)
 	this->tracklet_len++;
 
 	 std::vector<float> xyah = tlwh_to_xyah(new_track.tlwh);
-	DETECTBOX xyah_box;
+    DETECTBOX_XYAH xyah_box;
 	xyah_box[0] = xyah[0];
 	xyah_box[1] = xyah[1];
 	xyah_box[2] = xyah[2];
@@ -174,19 +174,19 @@ int STrack::next_id()
 	return _count;
 }
 
-int STrack::end_frame()
+int STrack::end_frame() const
 {
 	return this->frame_id;
 }
 
 void STrack::multi_predict( std::vector<STrack*> &stracks, KalmanFilter &kalman_filter)
 {
-	for (int i = 0; i < stracks.size(); i++)
+	for (auto & strack : stracks)
 	{
-		if (stracks[i]->state != TrackState::Tracked)
+		if (strack->state != TrackState::Tracked)
 		{
-			stracks[i]->mean[7] = 0;
+			strack->mean[7] = 0;
 		}
-		kalman_filter.predict(stracks[i]->mean, stracks[i]->covariance);
+		kalman_filter.predict(strack->mean, strack->covariance);
 	}
 }
